@@ -23,14 +23,14 @@ describe('updateProjectiles', () => {
   })
 
   test('expires when leaving the arena', () => {
-    const world = createWorld({ arena: { halfSize: 1, maxProjectiles: 4 } })
+    const world = createWorld({ arena: { halfSize: 1, maxProjectiles: 4, maxEnemies: 8 } })
     updateWeapons(world, FIXED_DT)
     for (let i = 0; i < 10; i++) updateProjectiles(world, FIXED_DT)
     expect(world.activeProjectiles).toBe(0)
   })
 
   test('freed slots are reused', () => {
-    const world = createWorld({ arena: { halfSize: 30, maxProjectiles: 1 } })
+    const world = createWorld({ arena: { halfSize: 30, maxProjectiles: 1, maxEnemies: 8 } })
     let shots = 0
     for (let i = 0; i < 60 * 5; i++) {
       updateProjectiles(world, FIXED_DT)

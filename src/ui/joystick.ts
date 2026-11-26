@@ -1,9 +1,9 @@
 /**
- * Floating virtual joystick on the left half of the screen.
- * Appears where the finger touches; works with touch and mouse (Pointer Events).
+ * Floating virtual joystick on one half of the screen (left = move, right = aim).
+ * Appears where the finger touches. Touch/pen only (Pointer Events).
  */
 export type Joystick = {
-  /** True while a finger (or mouse button) is holding the stick. */
+  /** True while a finger is holding the stick. */
   readonly active: boolean
   /** Writes the analog direction into `out` (length 0..1, dead zone applied). */
   read(out: { x: number; z: number }): void
@@ -15,9 +15,11 @@ const RADIUS = 60
 /** Fraction of RADIUS ignored near the center. */
 const DEAD_ZONE = 0.15
 
-export function createJoystick(parent: HTMLElement): Joystick {
+export type JoystickSide = 'left' | 'right'
+
+export function createJoystick(parent: HTMLElement, side: JoystickSide): Joystick {
   const zone = document.createElement('div')
-  zone.className = 'joystick-zone'
+  zone.className = `joystick-zone joystick-zone--${side}`
   const base = document.createElement('div')
   base.className = 'joystick-base'
   const knob = document.createElement('div')
@@ -42,7 +44,8 @@ export function createJoystick(parent: HTMLElement): Joystick {
   }
 
   const onDown = (e: PointerEvent) => {
-    if (pointerId !== -1) return
+    // Touch/pen only: on PC the mouse aims, and WASD moves.
+    if (pointerId !== -1 || e.pointerType === 'mouse') return
     pointerId = e.pointerId
     originX = e.clientX
     originY = e.clientY

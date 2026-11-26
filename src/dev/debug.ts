@@ -1,7 +1,9 @@
-/** Debug overlay, enabled with `?debug=1` or in dev builds via `?debug`. */
+import type { World } from '../core/world'
+
+/** Debug overlay, enabled with `?debug=1` (or just `?debug`). */
 export type DebugOverlay = {
   /** Call once per rendered frame. */
-  frame(now: number, tick: number, projectiles: number): void
+  frame(now: number, world: World): void
 }
 
 const SAMPLE_MS = 500
@@ -20,13 +22,16 @@ export function createDebugOverlay(parent: HTMLElement): DebugOverlay {
   let lastSample = performance.now()
 
   return {
-    frame(now, tick, projectiles) {
+    frame(now, world) {
       frames++
       const elapsed = now - lastSample
       if (elapsed < SAMPLE_MS) return
       const fps = (frames * 1000) / elapsed
-      el.textContent = `FPS ${fps.toFixed(0)}  tick ${tick}
-projectiles ${projectiles}`
+      el.textContent = [
+        `FPS ${fps.toFixed(0)}  tick ${world.tick}`,
+        `enemies ${world.activeEnemies}  kills ${world.kills}`,
+        `projectiles ${world.activeProjectiles}`,
+      ].join('\n')
       frames = 0
       lastSample = now
     },

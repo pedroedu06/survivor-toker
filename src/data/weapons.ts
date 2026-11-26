@@ -9,6 +9,8 @@ export type WeaponDef = {
   projectileLifetime: number
   /** Cube edge length in world units. */
   projectileSize: number
+  /** Damage per hit. */
+  damage: number
   /** Distance from the player's center where the projectile spawns. */
   spawnOffset: number
 }
@@ -20,6 +22,7 @@ export const pistol: WeaponDef = {
   projectileLifetime: 0.8,
   projectileSize: 0.25,
   spawnOffset: 0.7,
+  damage: 1,
 }
 
 export const weapons = { pistol } as const

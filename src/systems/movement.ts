@@ -1,9 +1,10 @@
 import type { InputState } from '../core/input'
 import type { World } from '../core/world'
 
-/** Below this input length the player keeps its previous facing. */
-const FACING_THRESHOLD = 0.1
+/** Below this aim length the player keeps its previous aim. */
+const AIM_THRESHOLD = 0.1
 
+/** Moves the player and updates where it faces/shoots (manual aim, twin-stick). */
 export function updateMovement(world: World, input: InputState, dt: number): void {
   const p = world.player
   let mx = input.moveX
@@ -16,9 +17,11 @@ export function updateMovement(world: World, input: InputState, dt: number): voi
     mz /= len
   }
 
-  if (len > FACING_THRESHOLD) {
-    p.facingX = input.moveX / len
-    p.facingZ = input.moveZ / len
+  // Aim is independent from movement: walk one way, shoot another.
+  const aimLen = Math.hypot(input.aimX, input.aimZ)
+  if (aimLen > AIM_THRESHOLD) {
+    p.facingX = input.aimX / aimLen
+    p.facingZ = input.aimZ / aimLen
   }
 
   const speed = world.playerDef.speed

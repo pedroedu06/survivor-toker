@@ -4,9 +4,12 @@ export type ArenaDef = {
   halfSize: number
   /** Projectile pool capacity. Shots are skipped when it is full. */
   maxProjectiles: number
+  /** Enemy pool capacity. Spawns are skipped when it is full. */
+  maxEnemies: number
 }
 
 export const arena: ArenaDef = {
   halfSize: 30,
   maxProjectiles: 256,
+  maxEnemies: 128,
 }

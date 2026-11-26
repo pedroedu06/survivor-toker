@@ -2,32 +2,79 @@ import { createInputState, type InputState } from '../core/input'
 import { createJoystick } from './joystick'
 import { createKeyboard } from './keyboard'
 
+/** Projects a screen point (CSS px) onto the ground plane. Returns false if it misses. */
+export type ScreenToGround = (
+  clientX: number,
+  clientY: number,
+  out: { x: number; z: number },
+) => boolean
+
 export type InputSource = {
   /** Reused every frame; the simulation reads it on each fixed step. */
   readonly state: InputState
   /** Samples devices into `state`. Call once per rendered frame, before stepping. */
-  poll(): void
+  poll(playerX: number, playerZ: number): void
   dispose(): void
 }
 
-/** Merges the virtual joystick (touch/mouse) and the keyboard. Joystick wins while held. */
-export function createInputSource(uiRoot: HTMLElement): InputSource {
+/**
+ * Twin-stick input.
+ * Move: left joystick (touch) wins while held, otherwise WASD/arrows.
+ * Aim: right joystick (touch) wins while held, otherwise the mouse cursor (PC).
+ * No aim input => aim (0, 0) and the player keeps its last aim.
+ */
+export function createInputSource(
+  uiRoot: HTMLElement,
+  screenToGround: ScreenToGround,
+): InputSource {
   const state = createInputState()
-  const joystick = createJoystick(uiRoot)
+  const moveStick = createJoystick(uiRoot, 'left')
+  const aimStick = createJoystick(uiRoot, 'right')
   const keyboard = createKeyboard()
   const dir = { x: 0, z: 0 }
+  const ground = { x: 0, z: 0 }
+
+  let mouseActive = false
+  let mouseX = 0
+  let mouseY = 0
+  const onPointerMove = (e: PointerEvent) => {
+    if (e.pointerType !== 'mouse') return
+    mouseActive = true
+    mouseX = e.clientX
+    mouseY = e.clientY
+  }
+  // A touch means we are on a phone (or emulating one): stop following the mouse.
+  const onPointerDown = (e: PointerEvent) => {
+    if (e.pointerType !== 'mouse') mouseActive = false
+  }
+  window.addEventListener('pointermove', onPointerMove)
+  window.addEventListener('pointerdown', onPointerDown, true)
 
   return {
     state,
-    poll() {
-      if (joystick.active) joystick.read(dir)
+    poll(playerX, playerZ) {
+      if (moveStick.active) moveStick.read(dir)
       else keyboard.read(dir)
       state.moveX = dir.x
       state.moveZ = dir.z
+
+      state.aimX = 0
+      state.aimZ = 0
+      if (aimStick.active) {
+        aimStick.read(dir)
+        state.aimX = dir.x
+        state.aimZ = dir.z
+      } else if (mouseActive && screenToGround(mouseX, mouseY, ground)) {
+        state.aimX = ground.x - playerX
+        state.aimZ = ground.z - playerZ
+      }
     },
     dispose() {
-      joystick.dispose()
+      moveStick.dispose()
+      aimStick.dispose()
       keyboard.dispose()
+      window.removeEventListener('pointermove', onPointerMove)
+      window.removeEventListener('pointerdown', onPointerDown, true)
     },
   }
 }

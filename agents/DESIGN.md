@@ -16,6 +16,8 @@ Status: **[decided]** final · **[provisional]** guess until tested · **[idea]*
 - [decided] Game logic stays **2D on the (x, z) plane**. Only rendering is 3D. This keeps the simulation simple and performance predictable.
 - [provisional] Perspective camera tilted ~55-60°, following the player.
 - [provisional] Simple shadows (blob/disc under the character, no shadow maps), few textures (color palette), `InstancedMesh` for hordes, simple animation (bob/squash) before skeletal animation.
+- [provisional] Character size: height ~1.0-1.15, width ~0.85-1.0 (chunky, readable from above), collision radius ~0.45 (matches the visual width). Common zombies the same size or slightly smaller; special ones bigger (1.3-2.0) to be recognizable from afar.
+- [decided] Blender models: 1 unit = 1 m, origin at the feet (center of the base), facing forward (+Z in Three.js after glTF export).
 - [decided] Start with **placeholders** (colored capsules and cubes). Swap in real models later: CC0 packs (Kenney, Quaternius) or custom Blender models.
 - Biggest project risk: 3D art and animation cost. Real models only come in once the game loop is already fun with placeholders.
 
@@ -51,10 +53,9 @@ src/
 ## Gameplay
 
 - [decided] Virtual joystick on the left (WASD/arrows on PC). Auto-shoot with no fire button (important in later rounds).
-- [provisional] No aiming: the character shoots where it is facing, which is the direction it is moving (`targeting: 'facing'` by default). The player "aims" by moving. Kept facing when idle. Validate once zombies exist (fleeing a horde shoots away from it).
+- [provisional] Manual aim, twin-stick, for testing: right virtual joystick aims on mobile, mouse aims on PC. Fire stays automatic (no button) toward the aim; releasing the right stick keeps the last aim. Movement does not change the aim. (Replaces "shoot where you move", which made fleeing shoot away from the horde and felt too hard.)
 - [decided] Each weapon has a `targeting`; cards can improve/change it.
-- [idea] `nearest` targeting (auto-aim at the closest zombie) is no longer the default: a card or special weapon that grants it.
-- [idea] Settings option to choose the shooting mode: automatic (default, no button) or manual (fire button / player-controlled shooting). Details open.
+- [idea] Settings option to choose the aim mode: manual (twin-stick/mouse) or aim lock (`nearest`: auto-aim at the closest zombie). Also possibly automatic vs manual fire (fire button). Details open.
 - [provisional] A round ends when all zombies are dead. If the player takes too long, a time limit passes and more zombies start spawning.
 - [decided] Between rounds: use the box, sell cards.
 - [decided] Kills give **points** (spent on the Mystery Box) and **XP** (level up, pick 1 of 3 cards).
@@ -202,7 +203,7 @@ When reporting a problem: say what was expected, what happened, and use "copy ru
 - In-run rarity in Rush.
 - Chances per offer vs per slot (assumed: per offer).
 - Screen orientation: portrait vs landscape (today it follows the phone rotation).
-- Manual shooting mode in settings: how it works (fire button? second stick?).
+- Aim mode in settings: manual vs aim lock as the default; manual fire button or not.
 
 ## Planned phases
 

@@ -25,7 +25,7 @@ describe('updateWeapons', () => {
   })
 
   test('skips shots when the pool is full instead of growing', () => {
-    const world = createWorld({ arena: { halfSize: 30, maxProjectiles: 2 } })
+    const world = createWorld({ arena: { halfSize: 30, maxProjectiles: 2, maxEnemies: 8 } })
     for (let i = 0; i < 600; i++) updateWeapons(world, FIXED_DT)
     expect(world.projectiles.length).toBe(2)
     expect(world.activeProjectiles).toBe(2)

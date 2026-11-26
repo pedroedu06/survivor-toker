@@ -7,8 +7,14 @@ export type InputState = {
   moveX: number
   /** Desired movement on z, in [-1, 1]. Screen up = -z. */
   moveZ: number
+  /**
+   * Aim direction on the ground plane (any length). (0, 0) = no aim input this step:
+   * the player keeps the last aim.
+   */
+  aimX: number
+  aimZ: number
 }
 
 export function createInputState(): InputState {
-  return { moveX: 0, moveZ: 0 }
+  return { moveX: 0, moveZ: 0, aimX: 0, aimZ: 0 }
 }

@@ -35,13 +35,21 @@ describe('updateMovement', () => {
     expect(world.player.z).toBe(-limit)
   })
 
-  test('facing follows movement and is kept when idle', () => {
+  test('aim is independent from movement', () => {
     const world = createWorld()
     expect([world.player.facingX, world.player.facingZ]).toEqual([0, -1])
     updateMovement(world, input(-1, 0), FIXED_DT)
-    expect(world.player.facingX).toBeCloseTo(-1)
-    expect(world.player.facingZ).toBeCloseTo(0)
+    expect(world.player.facingX).toBe(0)
+    expect(world.player.facingZ).toBe(-1)
+  })
+
+  test('aim input sets a normalized facing; no aim keeps the last one', () => {
+    const world = createWorld()
+    updateMovement(world, { moveX: -1, moveZ: 0, aimX: 3, aimZ: 4 }, FIXED_DT)
+    expect(world.player.facingX).toBeCloseTo(0.6)
+    expect(world.player.facingZ).toBeCloseTo(0.8)
     updateMovement(world, input(0, 0), FIXED_DT)
-    expect(world.player.facingX).toBeCloseTo(-1)
+    expect(world.player.facingX).toBeCloseTo(0.6)
+    expect(world.player.facingZ).toBeCloseTo(0.8)
   })
 })
