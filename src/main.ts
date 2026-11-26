@@ -1,28 +1,32 @@
-import { advanceClock, createFixedClock, FIXED_DT } from './core/loop'
+import { advanceClock, createFixedClock } from './core/loop'
+import { stepWorld } from './core/step'
+import { createWorld } from './core/world'
 import { createDebugOverlay, isDebugEnabled } from './dev/debug'
 import { createGameRenderer } from './render/scene'
+import { createInputSource } from './ui/input'
 
 const canvas = document.querySelector<HTMLCanvasElement>('#game')
 const ui = document.querySelector<HTMLElement>('#ui')
 if (!canvas || !ui) throw new Error('Missing #game canvas or #ui root')
 
-const renderer = createGameRenderer(canvas)
+const world = createWorld()
+const input = createInputSource(ui)
+const renderer = createGameRenderer(canvas, world)
 const debug = isDebugEnabled() ? createDebugOverlay(ui) : null
 const clock = createFixedClock()
 
-// Placeholder simulation step: real systems (movement, spawn, ...) plug in here in Milestone 1.
-const step = (_dt: number) => {}
+const step = (dt: number) => stepWorld(world, input.state, dt)
 
 let last = performance.now()
 const frame = (now: number) => {
   const frameDt = (now - last) / 1000
   last = now
 
+  input.poll()
   advanceClock(clock, frameDt, step)
 
-  const t = (clock.tick + clock.alpha) * FIXED_DT
-  renderer.render(Math.sin(t * 4) * 0.1)
-  debug?.frame(now, clock.tick)
+  renderer.render(world, clock.alpha)
+  debug?.frame(now, world.tick, world.activeProjectiles)
 
   requestAnimationFrame(frame)
 }

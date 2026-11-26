@@ -1,7 +1,7 @@
 /** Debug overlay, enabled with `?debug=1` or in dev builds via `?debug`. */
 export type DebugOverlay = {
   /** Call once per rendered frame. */
-  frame(now: number, tick: number): void
+  frame(now: number, tick: number, projectiles: number): void
 }
 
 const SAMPLE_MS = 500
@@ -20,12 +20,13 @@ export function createDebugOverlay(parent: HTMLElement): DebugOverlay {
   let lastSample = performance.now()
 
   return {
-    frame(now, tick) {
+    frame(now, tick, projectiles) {
       frames++
       const elapsed = now - lastSample
       if (elapsed < SAMPLE_MS) return
       const fps = (frames * 1000) / elapsed
-      el.textContent = `FPS ${fps.toFixed(0)}  tick ${tick}`
+      el.textContent = `FPS ${fps.toFixed(0)}  tick ${tick}
+projectiles ${projectiles}`
       frames = 0
       lastSample = now
     },

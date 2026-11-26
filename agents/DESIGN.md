@@ -50,7 +50,11 @@ src/
 
 ## Gameplay
 
-- [decided] Virtual joystick on the left. Auto-shoot (important in later rounds). Each weapon has a default `targeting` (`nearest` by default); cards can improve/change it.
+- [decided] Virtual joystick on the left (WASD/arrows on PC). Auto-shoot with no fire button (important in later rounds).
+- [provisional] No aiming: the character shoots where it is facing, which is the direction it is moving (`targeting: 'facing'` by default). The player "aims" by moving. Kept facing when idle. Validate once zombies exist (fleeing a horde shoots away from it).
+- [decided] Each weapon has a `targeting`; cards can improve/change it.
+- [idea] `nearest` targeting (auto-aim at the closest zombie) is no longer the default: a card or special weapon that grants it.
+- [idea] Settings option to choose the shooting mode: automatic (default, no button) or manual (fire button / player-controlled shooting). Details open.
 - [provisional] A round ends when all zombies are dead. If the player takes too long, a time limit passes and more zombies start spawning.
 - [decided] Between rounds: use the box, sell cards.
 - [decided] Kills give **points** (spent on the Mystery Box) and **XP** (level up, pick 1 of 3 cards).
@@ -197,6 +201,8 @@ When reporting a problem: say what was expected, what happened, and use "copy ru
 - Enemy curve after round ~100.
 - In-run rarity in Rush.
 - Chances per offer vs per slot (assumed: per offer).
+- Screen orientation: portrait vs landscape (today it follows the phone rotation).
+- Manual shooting mode in settings: how it works (fire button? second stick?).
 
 ## Planned phases
 
