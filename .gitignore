@@ -1,0 +1,31 @@
+# deps
+node_modules/
+
+# build
+dist/
+coverage/
+.vite/
+*.tsbuildinfo
+
+# android build outputs
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+android/.idea/
+android/captures/
+*.apk
+*.aab
+
+# env / os / editors
+.env
+.env.*
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.log
+
+# claude code local settings
+.claude/settings.local.json
