@@ -1,5 +1,7 @@
 import type { InputState } from '../core/input'
 import type { World } from '../core/world'
+import { SIDES } from '../data/maps'
+import { canBuyTurret, canRepairSide, canUpgradeSide } from '../systems/base'
 import { canBuy } from '../systems/shop'
 
 /**
@@ -15,6 +17,7 @@ export function botInput(world: World, out: InputState): void {
   out.useItem = ''
   out.upgradeWeapon = ''
   out.dev = ''
+  out.base = ''
   out.skipIntermission = false
 
   // Aim: nearest active zombie.
@@ -47,6 +50,25 @@ export function botInput(world: World, out: InputState): void {
       if (canBuy(world, id) === 'ok') {
         out.buyItem = id
         return // one purchase per step; skip on a later step
+      }
+    }
+    // Base: repair, then a turret, then upgrades (one per step).
+    for (const side of SIDES) {
+      if (canRepairSide(world, side) === 'ok') {
+        out.base = `repair:${side}`
+        return
+      }
+    }
+    for (const side of SIDES) {
+      if (canBuyTurret(world, side) === 'ok') {
+        out.base = `turret:${side}`
+        return
+      }
+    }
+    for (const side of SIDES) {
+      if (canUpgradeSide(world, side) === 'ok') {
+        out.base = `upgrade:${side}`
+        return
       }
     }
     out.skipIntermission = true

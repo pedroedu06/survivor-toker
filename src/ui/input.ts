@@ -23,6 +23,8 @@ export type InputSource = {
   requestUse(id: string): void
   /** Queues a one-step "buy next weapon upgrade level" command. */
   requestUpgrade(id: string): void
+  /** Queues a one-step base command (`upgrade:n`, `repair:s`, `turret:e`...). */
+  requestBase(cmd: string): void
   /** Queues dev command(s) (see systems/dev.ts). They go through the sim, so replays match. */
   requestDev(cmd: string): void
   /** Call after each simulation step so one-step commands are not repeated. */
@@ -51,6 +53,7 @@ export function createInputSource(
   let buyRequested = ''
   let useRequested = ''
   let upgradeRequested = ''
+  let baseRequested = ''
   let devRequested = ''
   let mouseActive = false
   let mouseX = 0
@@ -96,6 +99,8 @@ export function createInputSource(
       useRequested = ''
       if (upgradeRequested) state.upgradeWeapon = upgradeRequested
       upgradeRequested = ''
+      if (baseRequested) state.base = baseRequested
+      baseRequested = ''
       if (devRequested) state.dev = state.dev ? `${state.dev};${devRequested}` : devRequested
       devRequested = ''
 
@@ -111,6 +116,9 @@ export function createInputSource(
     requestUpgrade(id) {
       upgradeRequested = id
     },
+    requestBase(cmd) {
+      baseRequested = cmd
+    },
     requestUse(id) {
       useRequested = id
     },
@@ -122,6 +130,7 @@ export function createInputSource(
       state.buyItem = ''
       state.useItem = ''
       state.upgradeWeapon = ''
+      state.base = ''
       state.dev = ''
     },
     dispose() {

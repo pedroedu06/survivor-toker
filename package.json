@@ -14,7 +14,8 @@
     "cap:sync": "bun run build && cap sync android",
     "android": "bun run cap:sync && cap run android",
     "replay": "bun scripts/replay.ts",
-    "soak": "bun scripts/soak.ts"
+    "soak": "bun scripts/soak.ts",
+    "import-map": "bun scripts/importMap.ts"
   },
   "dependencies": {
     "@capacitor/android": "^8.6.3",

@@ -55,7 +55,7 @@ describe('recorder + playback', () => {
     rec.record(0, { ...createInputState(), moveX: 1 })
     const log = rec.export(10, 'deadbeef', 'test')
     const text = formatRunText(log, ['rodada 1', 'invariantes: ok'])
-    expect(text.startsWith('SURVIVOR-RUN v1')).toBe(true)
+    expect(text.startsWith('SURVIVOR-RUN v2')).toBe(true)
     expect(parseRunText(text)).toEqual(log)
   })
 

@@ -20,7 +20,7 @@ Status: **[decided]** final · **[provisional]** guess until tested · **[idea]*
 - [decided] Blender models: 1 unit = 1 m, origin at the feet (center of the base), facing forward (+Z in Three.js after glTF export).
 - [decided] **Base character template: "Trooper"** (`art/characters/trooper_base.blend` / `.glb`, previews in `art/previews/`). Every character, skin and enemy (zombies included) is built from this mold: big round egg head (~0.6 wide), small pear body, short tube arms and legs, round mitten hands, rounded boots, flat saturated colors. Face: oval black eyes with a highlight, slanted brows, thin arc mouth ("angry smile" for the soldier). Features are placed on the head surface (never sunk in). ~1.0 m tall, origin at the feet, facing -Y in Blender (+Z in Three.js). The current model is ~16.6k tris: decimate to ~5-6k before rigging/shipping.
 - [decided] Weapons are separate models, **slightly more realistic** than the characters (still chunky and readable), origin at the grip, barrel forward, attached to a hand socket so a new weapon needs no new animation.
-- [decided] Keep animation **simple** (standard rig with few bones; idle/walk/aim/hit/death, bob and squash). Rich cartoon animation is out of scope until there is a dedicated artist.
+- [decided] Keep animation **simple**: one shared rig (14 bones + `weapon.R` socket) and one shared set of animations (`idle`, `run`, `shoot` aim pose, `hit` small knock back, `death` falls on the back, `melee` right-arm arc) for every character. Approved by the user for every character. Rich cartoon animation is out of scope until there is a dedicated artist. Full standard in `agents/MODELS.md`.
 - [decided] Start with **placeholders** (colored capsules and cubes). Swap in real models later: CC0 packs (Kenney, Quaternius) or custom Blender models.
 - Biggest project risk: 3D art and animation cost. Real models only come in once the game loop is already fun with placeholders.
 
@@ -85,10 +85,11 @@ src/
 - [decided] Catalog (`data/shop.ts`):
   - **Shield**: refills the shield right away.
   - **Health potion** and **speed potion**: stored in the inventory (max 3 each) and used **during a wave** with on-screen buttons (in the intermission HP already regenerates).
-  - **Melee weapons** (katana, knife, axe), **turrets** and **walls** (protect/improve your base): listed as "coming soon" until the Blender models exist; their behavior is not implemented yet.
+  - **Melee weapons** (katana, knife, axe): listed as "coming soon" until the models exist.
+  - **Base** tab (maps with a base): wall upgrades/repairs per side and turrets, see "Base" below.
   - **Damage potion**: stored like the others, used during a wave.
 - [provisional] Prices/effects: shield 20 (full refill), health potion 15 (+50 HP), speed potion 15 (+40% speed for 10 s), damage potion 20 (+50% damage for 10 s).
-- [decided] The shop has two tabs: **Items** and **Weapon**. The Weapon tab sells upgrades for the **equipped weapon** (today the pistol; later also the one picked up from the Mystery Box). Upgrades are tracked **per weapon**: a new weapon starts at level 0.
+- [decided] The shop has three tabs: **Items**, **Weapon** and **Base** (only on maps with a base). The Weapon tab sells upgrades for the **equipped weapon** (today the pistol; later also the one picked up from the Mystery Box). Upgrades are tracked **per weapon**: a new weapon starts at level 0.
 - [provisional] Upgrades (`data/upgrades.ts`): damage +25% per level and fire rate +15% per level, max level 5, price 30 x 1.6^level (30, 48, 77, 123, 197). They stack with the damage potion.
 - [idea] Aimed consumables for the shop: a **missile** you point at a spot to wipe out a horde, a **bomb** you aim and throw, etc. Bought in the intermission, used during the wave (like potions), with an aim/target gesture. Details open (area, damage, price, how to aim on mobile).
 - [idea] Later: **training ("estudo") for the character** (valid for the run, so it does not break "meta-progression is unlocks only"); more weapon upgrades (pierce, range, projectile speed).
@@ -199,7 +200,30 @@ const hp = baseHp * enemyGrowth ** round
 - [decided] **Arc arrows** on the ground around the player point to the active spawn points during a round. Spawn points are marked on the ground ("portals") while testing; the final game has no marker.
 - [provisional] Test map numbers: arena 60x60, points 25 units from the center (walls at 30), zombies spawn within 2.5 units of the point; active points = `min(points, 1 + floor((round - 1) / 4))` (1 in rounds 1-4, 2 in 5-8, 3 in 9-12, all 4 from 13).
 - [decided] Maps are built in Blender following `MAPS.md` (1 u = 1 m, north = +Y, `spawn_*` / `player_start` empties, `col_*` collision shapes, `.glb`).
-- [open] The 5 real maps: layout, obstacles, theme, models. Obstacle collision + zombie pathfinding come with the first map that has obstacles.
+- [decided] **Starting map `start_base`** (approved): grass field, central wooden base (8 walls + 4 corner doors, wall/door tiers wood → wood+metal → metal → titanium, 4 wooden turret blocks; the map **starts with no turrets**, they are added later on the blocks; no roof), 4 tree groves at the corners plus scattered trees and bushes, all with wind and no collision (player can hide under them). Spawns unchanged. Details in `MAPS.md`.
+- [decided] `start_base` is the **Forest** map of the final game (4 more maps to come). It is the map the game plays today (`MAP` in `main.ts`); `testArena` stays for tests.
+- [decided] Blender maps become simulation data with `bun run import-map <id>` (`data/maps/<id>.gen.ts`: spawns, obstacles, base slots, turret slots, hiding grid). A test fails if the `.glb` changed and the import was not re-run. The game renders the `.glb` itself.
+- [decided] Zombie pathfinding: flow field (Dijkstra on a 0.5 m grid) toward the player, recomputed when the player changes cell (max ~6/s) or a base piece breaks/is rebuilt. Close zombies with a clear line walk straight at the player. Crossing an intact wall/door has a high cost, so zombies go **around** the base when they can and only **break in** when the player is shut inside (each zombie goes to the cheapest piece).
+- [provisional] Look: Lambert materials with +15% saturation, bright sky, hemisphere light + warm sun with one 1024 shadow map following the player (can be turned off if a phone drops below 60 fps), neutral tone mapping.
+- [decided] Scenery **outside** the play area (render only, `render/scenery.ts`): a grass skirt under the map so the ground never ends, a forest ring with hills and rocks (32-46 m), and low-poly snowy mountains far out (62-80 m). Simple, instanced, fixed seed.
+- [open] The other 4 maps: layout, theme, models. Map selection.
+
+### Base (walls, doors, turrets)
+
+- [decided] The base has **4 walls**, one per side (N/E/S/W). Each wall = 2 wall sections + the turret block in the middle. The 4 corner **doors belong to the north and south walls** (NW/NE → north, SW/SE → south).
+- [decided] **Upgrades are bought per side** (both sections and that side's doors go up together): wood → wood + iron → full metal → titanium. **Life is per piece**: each section/door breaks on its own and opens only that hole. The shop also **repairs** a side (rebuilds broken pieces).
+- [decided] Pieces show 4 damage phases (prefab meshes `_d1.._d4`); d4 = destroyed (walkable rubble). Breaking a bit more throws debris + dust and shakes the piece.
+- [decided] **Doors** open when the player is near and **only the player** passes. Zombies always collide with an intact door: they have to break it (or a wall).
+- [decided] **Turrets**: the map starts with none. Buying one in the shop shows a **ghost preview on every free turret block**; the player picks the side (N/L/S/O) and confirms. One turret per side. It turns to the nearest zombie in range and shoots (no animation yet).
+- [provisional] Shots (player and turrets) fly **over** the walls, so the base can be defended from inside (like CoD windows).
+- [provisional] Numbers (`data/base.ts`, `data/turrets.ts`, `data/enemies.ts`): life per piece 150 / 300 / 600 / 1000 by tier, upgrade 80 / 180 / 400 coins, repair 0.1 coin per missing life point, phases at 80 / 55 / 30 % life, doors open within 2 m, zombie wall damage 10/s each. Turret 200 coins, range 9 m, 2 shots/s, damage 1, turns 360°/s. **Wall life is still to be defined by the user after playing.**
+
+### Hiding (bushes)
+
+- [decided] Trees and bushes have **no collision**. Only **bushes** hide the player (cells from the `bushes` footprint, `hideGrid`); trees do **not** hide (changed by the user).
+- [decided] While hidden: the screen edges blur (green tint, center sharp), **the gun stops firing** (shooting would give you away), zombies **lose track**: each one stands still or wanders slowly around. The round timer keeps running.
+- [decided] A zombie bumping into the hidden player **finds** them; they stay found until they leave the cover. Leaving the cover: every zombie hunts again.
+- [decided] Canopies and bushes get a dithered hole around the player so they stay visible under/inside them.
 
 ## Modes and rewards
 
@@ -253,7 +277,7 @@ When reporting a problem: say what was expected, what happened, and use "copy ru
 - Chances per offer vs per slot (assumed: per offer).
 
 - Aim mode in settings: manual vs aim lock as the default; manual fire button or not.
-- Shop: melee/turret/wall behavior, weapon upgrades and training (see "Shop").
+- Shop: melee behavior, training (see "Shop"). Wall life and base prices after the user plays (see "Base").
 
 ## Planned phases
 

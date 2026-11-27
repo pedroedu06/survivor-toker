@@ -7,8 +7,12 @@ export const itemIcons: Record<string, string> = {
   katana: '🗡️',
   knife: '🔪',
   axe: '🪓',
+}
+
+/** Placeholder icons for the base tab: walls by tier (1..4) and the turret. */
+export const baseIcons = {
+  tiers: ['', '🪵', '🔩', '⛓️', '💠'],
   turret: '🗼',
-  wall: '🧱',
 }
 
 /** Placeholder icons for weapon upgrades. */

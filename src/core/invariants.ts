@@ -1,5 +1,7 @@
+import { tierDef } from '../data/base'
 import { shopItems } from '../data/shop'
 import { weaponUpgrades } from '../data/upgrades'
+import { boxDistance } from './navGrid'
 import type { World } from './world'
 
 const EPS = 1e-6
@@ -94,5 +96,28 @@ export function checkInvariants(world: World): string[] {
         bad(`weapon ${weaponId} ${up.id} level ${level} invalid`)
     }
   }
+  // Base: life within the tier, tiers in range, nobody inside an intact wall.
+  const slots = world.map.slots ?? []
+  world.structures.forEach((s, i) => {
+    const def = slots[i]
+    if (!def) {
+      bad(`structure[${i}] has no slot`)
+      return
+    }
+    finite(s.hp, `structure ${def.id}.hp`)
+    const tier = world.sideTier[['n', 'e', 's', 'w'].indexOf(def.side)] ?? 0
+    if (s.maxHp !== tierDef(tier).hp) bad(`${def.id} maxHp ${s.maxHp} != tier ${tier} life`)
+    if (s.hp < 0 || s.hp > s.maxHp + EPS) bad(`${def.id} hp out of range (${s.hp})`)
+    if (s.hp <= 0) return
+    const pr = world.playerDef.radius
+    if (!s.open && boxDistance(def.box, p.x, p.z) < pr - 0.05) bad(`player inside ${def.id}`)
+  })
+  world.sideTier.forEach((t, i) => {
+    if (!Number.isInteger(t) || t < 1 || t > 4) bad(`sideTier[${i}] invalid (${t})`)
+  })
+  world.turrets.forEach((t, i) => {
+    finite(t.yaw, `turret[${i}].yaw`)
+  })
+  if (p.hidden && p.exposed) bad('player hidden and exposed at once')
   return problems
 }

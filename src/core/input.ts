@@ -21,6 +21,11 @@ export type InputState = {
   useItem: string
   /** One-step command: buy the next level of this weapon upgrade id ('' = nothing). */
   upgradeWeapon: string
+  /**
+   * One-step base command (intermission only): `upgrade:<side>`, `repair:<side>` or
+   * `turret:<side>`, side = n/e/s/w (see systems/base.ts). '' = nothing.
+   */
+  base: string
   /** One-step dev command(s), ';'-separated (see systems/dev.ts). '' = nothing. */
   dev: string
 }
@@ -35,6 +40,7 @@ export function createInputState(): InputState {
     buyItem: '',
     useItem: '',
     upgradeWeapon: '',
+    base: '',
     dev: '',
   }
 }

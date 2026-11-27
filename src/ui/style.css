@@ -604,9 +604,203 @@ body {
   display: none;
 }
 
+/* Base tab: one card per wall side + the turret card. */
+.shop-base {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+}
+
 .shop[data-tab="items"] .shop-weapon,
-.shop[data-tab="weapon"] > .shop-panel > .shop-grid {
+.shop[data-tab="items"] .shop-base,
+.shop[data-tab="weapon"] > .shop-panel > .shop-grid,
+.shop[data-tab="weapon"] .shop-base,
+.shop[data-tab="base"] > .shop-panel > .shop-grid,
+.shop[data-tab="base"] .shop-weapon {
   display: none;
+}
+
+.shop-tab[hidden] {
+  display: none;
+}
+
+.shop-life {
+  width: 100%;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: rgb(0 0 0 / 35%);
+}
+
+.shop-life-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: #5bd16a;
+  transition: width 0.2s;
+}
+
+.shop-life-fill.low {
+  background: #ff6b5b;
+}
+
+.shop-side-icon {
+  margin-right: 4px;
+}
+
+.shop-side-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.shop-side .shop-buy {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 5px 8px;
+  font-size: 13px;
+}
+
+.shop-repair {
+  background: #9fd3ff;
+}
+
+.shop-price-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 800;
+}
+
+.shop-price-tag.no-coin .coin-icon {
+  display: none;
+}
+
+/* Turret placement: bottom bar while the ghosts show on the turret blocks. */
+.turret-place {
+  display: none;
+  position: absolute;
+  left: 50%;
+  bottom: calc(env(safe-area-inset-bottom) + 12px);
+  z-index: 6;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: min(760px, calc(100% - 24px));
+  padding: 10px 12px;
+  transform: translateX(-50%);
+  border-radius: 16px;
+  background: rgb(22 26 36 / 88%);
+  color: #fff;
+  pointer-events: auto;
+}
+
+.turret-place.open {
+  display: flex;
+}
+
+/* The intermission panel sits under the bar: hide it while picking a side. */
+.placing-turret .hud .hud-intermission {
+  visibility: hidden;
+}
+
+.turret-place-title {
+  font-weight: 900;
+  font-size: 17px;
+}
+
+.turret-place-hint {
+  margin-top: -4px;
+  font-size: 12px;
+  opacity: 0.75;
+}
+
+.turret-place-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+}
+
+.turret-place-sides,
+.turret-place-actions {
+  display: flex;
+  flex: 1 1 240px;
+  gap: 6px;
+}
+
+.turret-side,
+.turret-place-actions .hud-button {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 6px;
+  font-size: 15px;
+}
+
+.turret-side.active {
+  background: #ffd34f;
+  box-shadow: 0 0 0 3px #fff inset;
+}
+
+.turret-cancel {
+  background: rgb(255 255 255 / 18%);
+  color: #fff;
+}
+
+.turret-confirm {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* Hiding in a tree/bush: blurred, green-tinted edges, sharp center. */
+.hide-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  opacity: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 45%, rgb(30 90 40 / 45%) 100%);
+  -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(5px);
+  -webkit-mask-image: radial-gradient(ellipse at center, transparent 38%, #000 75%);
+  mask-image: radial-gradient(ellipse at center, transparent 38%, #000 75%);
+  transition: opacity 0.2s;
+}
+
+.hide-overlay.on {
+  opacity: 1;
+}
+
+.hide-overlay-label {
+  position: absolute;
+  top: calc(env(safe-area-inset-top) + 96px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgb(20 60 28 / 70%);
+  color: #c8ffcf;
+  font:
+    800 14px / 1.2 system-ui,
+    sans-serif;
+}
+
+.loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font:
+    800 22px / 1 system-ui,
+    sans-serif;
+  background: #1b1f2a;
 }
 
 /* ---------- Pause ---------- */
@@ -903,6 +1097,19 @@ body {
 
 /* ---------- Landscape phones: short screens, tighter HUD ---------- */
 @media (orientation: landscape) and (max-height: 500px) {
+  .turret-place-hint {
+    display: none;
+  }
+
+  .turret-place {
+    gap: 6px;
+    bottom: calc(env(safe-area-inset-bottom) + 6px);
+  }
+
+  .shop-base > .shop-weapon-hint {
+    display: none;
+  }
+
   .hud-banner {
     top: 22%;
     font-size: 34px;

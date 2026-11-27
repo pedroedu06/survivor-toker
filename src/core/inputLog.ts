@@ -6,11 +6,14 @@ import type { InputState } from './input'
  * Inputs are quantized BEFORE the simulation sees them (see `quantizeInput`), so the
  * recorded values are exactly what was simulated. Only changes are stored:
  *  - `n`: flat numbers, 5 per change: [tick, moveX*1000, moveZ*1000, aimX*1000, aimZ*1000]
- *  - `c`: one-step commands: [tick, skip(0/1), buy, use, upgrade, dev]
+ *  - `c`: one-step commands: [tick, skip(0/1), buy, use, upgrade, dev, base]
+ * v1 runs (before maps had a base) have no `map` (= testArena) and no `base` command.
  */
 export type RunLog = {
-  v: 1
+  v: 1 | 2
   seed: number
+  /** Map id (`data/maps.ts`). Missing in v1 runs = 'testArena'. */
+  map?: string
   /** Build id of the game that recorded it (informative). */
   build: string
   /** Ticks simulated when the log was exported. */
@@ -18,7 +21,7 @@ export type RunLog = {
   /** worldChecksum at `ticks`, to verify a replay. */
   checksum: string
   n: number[]
-  c: Array<[number, number, string, string, string, string]>
+  c: Array<[number, number, string, string, string, string, string?]>
 }
 
 const MOVE_STEP = 0.05
@@ -45,10 +48,12 @@ export type InputRecorder = {
   record(tick: number, input: InputState): void
   /** Starts a new run (after "play again"). */
   reset(seed: number): void
+  /** Map the run is played on (written to the log). */
+  map: string
   export(ticks: number, checksum: string, build: string): RunLog
 }
 
-export function createInputRecorder(seed: number): InputRecorder {
+export function createInputRecorder(seed: number, map = 'testArena'): InputRecorder {
   let runSeed = seed
   let n: number[] = []
   let c: RunLog['c'] = []
@@ -58,6 +63,7 @@ export function createInputRecorder(seed: number): InputRecorder {
   let lastAz = Number.NaN
 
   return {
+    map,
     record(tick, input) {
       const mx = toInt(input.moveX)
       const mz = toInt(input.moveZ)
@@ -75,6 +81,7 @@ export function createInputRecorder(seed: number): InputRecorder {
         input.buyItem ||
         input.useItem ||
         input.upgradeWeapon ||
+        input.base ||
         input.dev
       ) {
         c.push([
@@ -84,6 +91,7 @@ export function createInputRecorder(seed: number): InputRecorder {
           input.useItem,
           input.upgradeWeapon,
           input.dev,
+          input.base,
         ])
       }
     },
@@ -94,7 +102,16 @@ export function createInputRecorder(seed: number): InputRecorder {
       lastMx = lastMz = lastAx = lastAz = Number.NaN
     },
     export(ticks, checksum, build) {
-      return { v: 1, seed: runSeed, build, ticks, checksum, n: n.slice(), c: c.slice() }
+      return {
+        v: 2,
+        seed: runSeed,
+        map,
+        build,
+        ticks,
+        checksum,
+        n: n.slice(),
+        c: c.slice(),
+      }
     },
   }
 }
@@ -124,6 +141,7 @@ export function createInputPlayback(log: RunLog): InputPlayback {
       out.useItem = ''
       out.upgradeWeapon = ''
       out.dev = ''
+      out.base = ''
       while (ci < log.c.length && (log.c[ci]?.[0] ?? 0) < tick) ci++
       const cmd = log.c[ci]
       if (cmd && cmd[0] === tick) {
@@ -132,12 +150,13 @@ export function createInputPlayback(log: RunLog): InputPlayback {
         out.useItem = cmd[3]
         out.upgradeWeapon = cmd[4]
         out.dev = cmd[5]
+        out.base = cmd[6] ?? ''
       }
     },
   }
 }
 
-const HEADER = 'SURVIVOR-RUN v1'
+const HEADER = 'SURVIVOR-RUN v2'
 
 /** Text to paste in a chat: a short human summary + the JSON log on the last line. */
 export function formatRunText(log: RunLog, summaryLines: string[]): string {
@@ -152,8 +171,13 @@ export function parseRunText(text: string): RunLog {
     .find((l) => l.startsWith('{'))
   if (!line) throw new Error('No run JSON found in the text')
   const log = JSON.parse(line) as RunLog
-  if (log.v !== 1 || !Number.isFinite(log.seed) || !Array.isArray(log.n) || !Array.isArray(log.c)) {
-    throw new Error('Not a valid run (v1)')
+  if (
+    (log.v !== 1 && log.v !== 2) ||
+    !Number.isFinite(log.seed) ||
+    !Array.isArray(log.n) ||
+    !Array.isArray(log.c)
+  ) {
+    throw new Error('Not a valid run (v1/v2)')
   }
   return log
 }

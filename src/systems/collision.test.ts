@@ -23,6 +23,7 @@ function shootAt(world: World, x: number, z: number) {
   p.x = x
   p.z = z
   p.life = 1
+  p.damage = world.weapon.damage
   world.activeProjectiles++
   return p
 }

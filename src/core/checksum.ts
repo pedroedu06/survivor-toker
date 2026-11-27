@@ -30,6 +30,13 @@ export function worldChecksum(world: World): string {
   mix(world.round.spawnMask)
   mix(world.activeEnemies)
   mix(world.activeProjectiles)
+  mix(p.hidden ? 1 : 0)
+  for (const s of world.structures) mix(s.hp)
+  for (const tier of world.sideTier) mix(tier)
+  for (const t of world.turrets) {
+    mix(t.active ? 1 : 0)
+    mix(t.yaw)
+  }
   for (const e of world.enemies) {
     if (!e.active) continue
     mix(e.x)

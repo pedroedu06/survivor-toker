@@ -7,10 +7,9 @@ export type ShopItemId =
   | 'katana'
   | 'knife'
   | 'axe'
-  | 'turret'
-  | 'wall'
 
-export type ShopItemKind = 'shield' | 'potion' | 'melee' | 'turret' | 'wall'
+/** Turrets and walls are bought in the shop's "Base" tab (data/base.ts, data/turrets.ts). */
+export type ShopItemKind = 'shield' | 'potion' | 'melee'
 
 export type ShopItem = {
   id: ShopItemId
@@ -54,8 +53,6 @@ export const shopItems: readonly ShopItem[] = [
   { id: 'katana', kind: 'melee', price: 150, available: false },
   { id: 'knife', kind: 'melee', price: 60, available: false },
   { id: 'axe', kind: 'melee', price: 120, available: false },
-  { id: 'turret', kind: 'turret', price: 200, available: false },
-  { id: 'wall', kind: 'wall', price: 40, available: false },
 ]
 
 export function getShopItem(id: string): ShopItem | undefined {

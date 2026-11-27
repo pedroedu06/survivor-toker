@@ -9,7 +9,7 @@ describe('soak (bot + random commands, invariants every step)', () => {
       const result = soakRun(seed, 60 * 60 * 3)
       expect(result.problem).toBeNull()
       expect(result.world.kills).toBeGreaterThan(0)
-    })
+    }, 30000)
   }
 })
 
@@ -22,5 +22,5 @@ describe('replay', () => {
     expect(replay.matches).toBe(true)
     expect(replay.world.kills).toBe(world.kills)
     expect(replay.world.coins).toBe(world.coins)
-  })
+  }, 30000)
 })

@@ -11,12 +11,16 @@ import { checkInvariants } from './core/invariants'
 import { advanceClock, createFixedClock, FIXED_DT } from './core/loop'
 import { stepWorld } from './core/step'
 import { createWorld, resetWorld } from './core/world'
+import { type Side, startBase } from './data/maps'
 import { botInput } from './dev/bot'
 import { createDebugOverlay, isDebugEnabled } from './dev/debug'
 import { createDevPanel } from './dev/devPanel'
 import { createErrorLog } from './dev/errors'
 import { createPerfRecorder, type FrameSample, formatPerfResult } from './dev/perfTest'
+import { loadMapAssets } from './render/mapAssets'
 import { createGameRenderer } from './render/scene'
+import type { TurretPlacement } from './render/turretsView'
+import { createHideOverlay } from './ui/hideOverlay'
 import { installHotkeys } from './ui/hotkeys'
 import { createHud, POTIONS } from './ui/hud'
 import { createInputSource } from './ui/input'
@@ -25,6 +29,7 @@ import { installLandscapeGuard } from './ui/orientation'
 import { createPauseMenu } from './ui/pause'
 import { createShopPanel } from './ui/shop'
 import { strings } from './ui/strings'
+import { createTurretPlacement } from './ui/turretPlacement'
 
 const canvas = document.querySelector<HTMLCanvasElement>('#game')
 const ui = document.querySelector<HTMLElement>('#ui')
@@ -36,11 +41,25 @@ const DEBUG = isDebugEnabled()
 /** How often (in steps) the debug build checks the invariants. */
 const INVARIANT_EVERY = 30
 
-const world = createWorld({ seed: newSeed() })
+/** The map being played ("Forest" in the final game). Map selection comes later. */
+const MAP = startBase
+
+// Load the map's Blender models before anything is drawn.
+const loading = document.createElement('div')
+loading.className = 'loading'
+loading.textContent = 'Carregando…'
+ui.appendChild(loading)
+const assets = await loadMapAssets(MAP.id).catch((e: unknown) => {
+  console.error('Map models failed to load', e)
+  return null
+})
+loading.remove()
+
+const world = createWorld({ seed: newSeed(), map: MAP })
 // Spawn markers ("portals") stay visible while testing; remove for the final game.
-const renderer = createGameRenderer(canvas, world, { showSpawnMarkers: true })
+const renderer = createGameRenderer(canvas, world, { showSpawnMarkers: true, assets })
 const input = createInputSource(ui, renderer.screenToGround)
-const recorder = createInputRecorder(world.seed)
+const recorder = createInputRecorder(world.seed, MAP.id)
 const clock = createFixedClock()
 
 // ---- Run state outside the sim (real time, tools) ----
@@ -68,7 +87,22 @@ const hud = createHud(ui, {
 const shop = createShopPanel(ui, {
   onBuy: (id) => input.requestBuy(id),
   onUpgrade: (id) => input.requestUpgrade(id),
+  onBase: (cmd) => input.requestBase(cmd),
+  onPlaceTurret: () => {
+    shop.close()
+    turretBar.open()
+  },
 })
+/** Turret placement preview state, read by the renderer every frame. */
+const turretPreview: TurretPlacement = { active: false, selected: null }
+const turretBar = createTurretPlacement(ui, {
+  onSelect: (side: Side | null) => {
+    turretPreview.selected = side
+  },
+  onConfirm: (side) => input.requestBase(`turret:${side}`),
+  onCancel: () => shop.open(),
+})
+const hideOverlay = createHideOverlay(ui)
 const modal = createTextModal(ui, strings.close)
 const pause = createPauseMenu(
   ui,
@@ -115,6 +149,8 @@ async function copyRun() {
 function startReplay(text: string) {
   try {
     const log = parseRunText(text)
+    const runMap = log.map ?? 'testArena'
+    if (runMap !== MAP.id) throw new Error(`a run é do mapa ${runMap}, o jogo está no ${MAP.id}`)
     restartRun(log.seed)
     replay = { playback: createInputPlayback(log), expected: log.checksum }
     modal.close()
@@ -165,13 +201,20 @@ const step = (dt: number) => {
     replay.playback.read(steps, state)
   } else if (botOn) {
     // The bot drives movement/aim, but commands from the UI (dev panel, buttons) still go through.
-    const ui = { dev: state.dev, buy: state.buyItem, use: state.useItem, up: state.upgradeWeapon }
+    const ui = {
+      dev: state.dev,
+      buy: state.buyItem,
+      use: state.useItem,
+      up: state.upgradeWeapon,
+      base: state.base,
+    }
     const skip = state.skipIntermission
     botInput(world, state)
     if (ui.dev) state.dev = ui.dev
     if (ui.buy) state.buyItem = ui.buy
     if (ui.use) state.useItem = ui.use
     if (ui.up) state.upgradeWeapon = ui.up
+    if (ui.base) state.base = ui.base
     if (skip) state.skipIntermission = true
     quantizeInput(state)
   }
@@ -219,11 +262,15 @@ const frame = (now: number) => {
   }
   const simEnd = performance.now()
 
+  turretPreview.active = turretBar.isOpen
+  renderer.setTurretPlacement(turretPreview)
   renderer.render(world, pause.paused ? 1 : clock.alpha)
   const renderEnd = performance.now()
 
   hud.update(world, now)
   shop.update(world)
+  turretBar.update(world)
+  hideOverlay.update(world)
 
   sample.frameMs = frameDt * 1000
   sample.simMs = simEnd - simStart

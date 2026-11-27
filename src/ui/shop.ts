@@ -1,15 +1,28 @@
 import type { World } from '../core/world'
+import { SIDES, type Side, sideIndex } from '../data/maps'
 import { shopItems } from '../data/shop'
 import { weaponUpgrades } from '../data/upgrades'
+import {
+  canBuyTurret,
+  canRepairSide,
+  canUpgradeSide,
+  repairSidePrice,
+  sideLifeFraction,
+  upgradeSidePrice,
+} from '../systems/base'
 import { type BuyResult, canBuy, canUpgrade, upgradePrice } from '../systems/shop'
 import { weaponLevel } from '../systems/weaponStats'
 import { button, coinIcon, el, setText } from './dom'
-import { itemIcons, upgradeIcons } from './icons'
+import { baseIcons, itemIcons, upgradeIcons } from './icons'
 import { strings } from './strings'
 
 export type ShopPanelCallbacks = {
   onBuy(id: string): void
   onUpgrade(id: string): void
+  /** Base command (`upgrade:<side>` / `repair:<side>`). */
+  onBase(command: string): void
+  /** "Buy turret": the caller closes the shop and lets the player pick a side. */
+  onPlaceTurret(): void
 }
 
 export type ShopPanel = {
@@ -20,7 +33,20 @@ export type ShopPanel = {
   update(world: World): void
 }
 
-type Tab = 'items' | 'weapon'
+type Tab = 'items' | 'weapon' | 'base'
+
+type SideCard = {
+  side: Side
+  card: HTMLElement
+  icon: HTMLElement
+  tier: HTMLElement
+  bar: HTMLElement
+  upgradeButton: HTMLButtonElement
+  upgradePrice: HTMLElement
+  repairButton: HTMLButtonElement
+  repairPrice: HTMLElement
+  shown: string
+}
 
 type ItemCard = {
   id: string
@@ -59,6 +85,7 @@ export function createShopPanel(parent: HTMLElement, callbacks: ShopPanelCallbac
   const tabs = el('div', 'shop-tabs', panel)
   const itemsTab = button('shop-tab', tabs, strings.tabItems, () => selectTab('items'))
   const weaponTab = button('shop-tab', tabs, strings.tabWeapon, () => selectTab('weapon'))
+  const baseTab = button('shop-tab', tabs, strings.tabBase, () => selectTab('base'))
 
   // ---- Items tab ----
   const grid = el('div', 'shop-grid', panel)
@@ -109,6 +136,61 @@ export function createShopPanel(parent: HTMLElement, callbacks: ShopPanelCallbac
     }
   })
 
+  // ---- Base tab (walls per side + turrets) ----
+  const baseSection = el('div', 'shop-base', panel)
+  el('div', 'shop-weapon-hint', baseSection).textContent = strings.baseHint
+  const baseGrid = el('div', 'shop-grid', baseSection)
+  const sideCards: SideCard[] = []
+  const priceTag = (parent: HTMLElement) => {
+    const tag = el('span', 'shop-price-tag', parent)
+    coinIcon(tag)
+    return el('span', '', tag)
+  }
+  for (const side of SIDES) {
+    const card = el('div', 'shop-card shop-side', baseGrid)
+    el('div', 'shop-card-name', card).textContent = strings.wallSide(strings.sides[side] ?? side)
+    const tierRow = el('div', 'shop-card-level', card)
+    const icon = el('span', 'shop-side-icon', tierRow)
+    const tier = el('span', '', tierRow)
+    const barBox = el('div', 'shop-life', card)
+    const bar = el('div', 'shop-life-fill', barBox)
+    const actions = el('div', 'shop-side-actions', card)
+    const upgradeButton = button('hud-button shop-buy', actions, '', () =>
+      callbacks.onBase(`upgrade:${side}`),
+    )
+    el('span', '', upgradeButton).textContent = strings.upgrade
+    const upgradePriceValue = priceTag(upgradeButton)
+    const repairButton = button('hud-button shop-buy shop-repair', actions, '', () =>
+      callbacks.onBase(`repair:${side}`),
+    )
+    el('span', '', repairButton).textContent = strings.repair
+    const repairPriceValue = priceTag(repairButton)
+    sideCards.push({
+      side,
+      card,
+      icon,
+      tier,
+      bar,
+      upgradeButton,
+      upgradePrice: upgradePriceValue,
+      repairButton,
+      repairPrice: repairPriceValue,
+      shown: '',
+    })
+  }
+  const turretCard = el('div', 'shop-card', baseGrid)
+  el('div', 'shop-card-icon', turretCard).textContent = baseIcons.turret
+  el('div', 'shop-card-name', turretCard).textContent = strings.turret.name
+  el('div', 'shop-card-desc', turretCard).textContent = strings.turret.desc
+  const turretPrice = el('div', 'shop-card-price', turretCard)
+  coinIcon(turretPrice)
+  const turretPriceValue = el('span', '', turretPrice)
+  const turretOwned = el('div', 'shop-card-owned', turretCard)
+  const turretButton = button('hud-button shop-buy', turretCard, strings.buy, () =>
+    callbacks.onPlaceTurret(),
+  )
+  let shownTurret = ''
+
   button('hud-button shop-close', panel, strings.close, () => close())
 
   let isOpen = false
@@ -119,6 +201,7 @@ export function createShopPanel(parent: HTMLElement, callbacks: ShopPanelCallbac
     overlay.dataset.tab = tab
     itemsTab.classList.toggle('active', tab === 'items')
     weaponTab.classList.toggle('active', tab === 'weapon')
+    baseTab.classList.toggle('active', tab === 'base')
   }
   selectTab('items')
 
@@ -129,6 +212,46 @@ export function createShopPanel(parent: HTMLElement, callbacks: ShopPanelCallbac
   function close() {
     isOpen = false
     overlay.classList.remove('open')
+  }
+
+  function updateBase(world: World) {
+    const hasBase = (world.map.slots?.length ?? 0) > 0
+    baseTab.hidden = !hasBase
+    if (!hasBase) return
+    for (const c of sideCards) {
+      const tier = world.sideTier[sideIndex(c.side)] ?? 1
+      const life = sideLifeFraction(world, c.side)
+      const up = canUpgradeSide(world, c.side)
+      const fix = canRepairSide(world, c.side)
+      const upPrice = upgradeSidePrice(world, c.side)
+      const fixPrice = repairSidePrice(world, c.side)
+      const key = `${tier}|${life.toFixed(3)}|${up}|${fix}|${upPrice}|${fixPrice}`
+      if (key === c.shown) continue
+      c.shown = key
+      setText(c.icon, baseIcons.tiers[tier] ?? '')
+      setText(c.tier, strings.tiers[tier] ?? '')
+      c.bar.style.width = `${Math.round(life * 100)}%`
+      c.bar.classList.toggle('low', life < 0.35)
+      c.upgradeButton.disabled = up !== 'ok'
+      c.upgradeButton.classList.toggle('maxed', up === 'full')
+      setText(c.upgradePrice, up === 'full' ? strings.maxed : String(upPrice))
+      c.upgradePrice.parentElement?.classList.toggle('no-coin', up === 'full')
+      c.repairButton.disabled = fix !== 'ok'
+      setText(c.repairPrice, fix === 'full' ? strings.intact : String(fixPrice))
+      c.repairPrice.parentElement?.classList.toggle('no-coin', fix === 'full')
+    }
+    const slots = world.map.turretSlots ?? []
+    const placed = world.turrets.filter((t) => t.active).length
+    const anyFree = SIDES.some((side) => canBuyTurret(world, side) === 'ok')
+    const full = placed >= slots.length
+    const key = `${placed}|${anyFree}|${world.turretDef.price}`
+    if (key !== shownTurret) {
+      shownTurret = key
+      setText(turretPriceValue, String(world.turretDef.price))
+      setText(turretOwned, placed > 0 ? strings.turretsPlaced(placed, slots.length) : '')
+      turretButton.disabled = !anyFree
+      setText(turretButton, full ? strings.full : strings.buy)
+    }
   }
 
   return {
@@ -196,6 +319,8 @@ export function createShopPanel(parent: HTMLElement, callbacks: ShopPanelCallbac
           setText(card.button, result === 'full' ? strings.maxed : strings.upgrade)
         }
       }
+
+      updateBase(world)
     },
   }
 }

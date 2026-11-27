@@ -2,11 +2,11 @@
 
 Mobile game: survivors-like with auto-shoot, CoD Zombies-style rounds, a weapon Mystery Box, cards as upgrades, 3D with a tilted top-down camera. Android first, offline in v1.
 
-The full memory of ideas and decisions is in `DESIGN.md`. The map standard (scale, axes, spawn empties, collision, export) is in `MAPS.md`. Before implementing any system, read its relevant section.
+The full memory of ideas and decisions is in `DESIGN.md`. The 3D model standard (template, rig, animations, weapons, export) is in `MODELS.md`: read it before touching any model. The map standard (scale, axes, spawn empties, collision, export) is in `MAPS.md`. Before implementing any system, read its relevant section.
 
 ## Current phase
 
-**Milestone 1** (see "Planned phases" in `DESIGN.md`), with **phase 2 (rounds)** and a first **shop** brought forward at the user's request. Milestone 1 tools are in (dev panel, copy run/replay, soak, perf test, pause). Still pending to close Milestone 1: the performance result on a real mid-range phone (60 fps with ~100 zombies). Update this line when the phase changes.
+**Milestone 1** (see "Planned phases" in `DESIGN.md`), with **phase 2 (rounds)**, a first **shop** and the **start map** (`start_base` = Forest: destructible base, doors, turrets, hiding in trees) brought forward at the user's request. Next: the player model (trooper). Milestone 1 tools are in (dev panel, copy run/replay, soak, perf test, pause). Still pending to close Milestone 1: the performance result on a real mid-range phone (60 fps with ~100 zombies). Update this line when the phase changes.
 
 ## Stack and commands
 
@@ -15,7 +15,8 @@ The full memory of ideas and decisions is in `DESIGN.md`. The map standard (scal
 - Code identifiers and files in English. The user chats in Portuguese: reply in Portuguese in chat, but keep files and code in English.
 - `bun test` for tests. Run typecheck before calling a phase done.
 - `bun run soak [seeds] [minutes]`: bot + random commands with invariants every step. Run it after changing gameplay systems.
-- A run pasted by the user ("SURVIVOR-RUN v1 ..."): save it to `runs/<name>.txt` and run `bun run replay runs/<name>.txt` to reproduce it headless (final state, checksum, first invariant failure).
+- `bun run import-map <id>`: after the user re-exports a map `.glb`, regenerates `src/data/maps/<id>.gen.ts` (see `MAPS.md`).
+- A run pasted by the user ("SURVIVOR-RUN v1/v2 ..."): save it to `runs/<name>.txt` and run `bun run replay runs/<name>.txt` to reproduce it headless (final state, checksum, first invariant failure).
 
 ## Determinism (needed for replays)
 

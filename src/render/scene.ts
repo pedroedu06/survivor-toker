@@ -5,13 +5,17 @@ import {
   CircleGeometry,
   Color,
   DirectionalLight,
+  Fog,
   GridHelper,
   Group,
+  HemisphereLight,
   InstancedMesh,
   Mesh,
   MeshBasicMaterial,
   MeshLambertMaterial,
+  NeutralToneMapping,
   Object3D,
+  PCFSoftShadowMap,
   PerspectiveCamera,
   Plane,
   PlaneGeometry,
@@ -22,7 +26,12 @@ import {
   WebGLRenderer,
 } from 'three'
 import type { World } from '../core/world'
+import type { MapAssets } from './mapAssets'
+import { createMapView, type MapView } from './mapView'
+import { createScenery } from './scenery'
 import { createSpawnIndicators } from './spawnIndicators'
+import { createStructuresView, type StructuresView } from './structuresView'
+import { createTurretsView, type TurretPlacement, type TurretsView } from './turretsView'
 
 /** Camera tilt from the ground plane, in degrees. [provisional] ~55-60 in DESIGN.md. */
 const CAMERA_TILT_DEG = 55
@@ -36,6 +45,13 @@ const PLAYER_COLOR = 0x4fa3ff
 const HURT_COLOR = 0xffffff
 /** Color toggles per second while the player is invulnerable after a hit. */
 const HURT_BLINK_HZ = 16
+/** [provisional] Lighting: bright sky + warm sun with one shadow map that follows the player. */
+const SKY_COLOR = 0x8fd6ff
+const FOG_NEAR = 34
+const FOG_FAR = 80
+const SHADOW_HALF = 16
+const SHADOW_MAP_SIZE = 1024
+const SUN_OFFSET = { x: -9, y: 18, z: 7 }
 
 export type GameRenderer = {
   /** Draws the world, interpolating between the last two sim steps with `alpha`. */
@@ -45,6 +61,8 @@ export type GameRenderer = {
   resize(): void
   /** Draw calls and triangles of the last rendered frame. */
   stats(out: { drawCalls: number; triangles: number }): void
+  /** Turret placement preview (ghosts on the free turret blocks). */
+  setTurretPlacement(placement: TurretPlacement): void
   dispose(): void
 }
 
@@ -65,6 +83,10 @@ function shadowDisc(radius: number): CircleGeometry {
 export type RendererOptions = {
   /** Debug only: draw the spawn point markers on the ground (not in the final game). */
   showSpawnMarkers?: boolean
+  /** The map's Blender models (null = placeholder ground and grid). */
+  assets?: MapAssets | null
+  /** Real-time shadows (sun). Turn off if a phone cannot keep 60 fps. */
+  shadows?: boolean
 }
 
 export function createGameRenderer(
@@ -78,32 +100,74 @@ export function createGameRenderer(
     powerPreference: 'high-performance',
   })
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, MAX_DPR))
+  // Neutral tone mapping keeps the flat colors saturated (ACES washes them out).
+  renderer.toneMapping = NeutralToneMapping
+  renderer.toneMappingExposure = 1.0
+  const shadows = options.shadows ?? true
+  renderer.shadowMap.enabled = shadows
+  renderer.shadowMap.type = PCFSoftShadowMap
 
+  const assets = options.assets ?? null
   const scene = new Scene()
-  scene.background = new Color(0x1b1f2a)
+  scene.background = new Color(assets ? SKY_COLOR : 0x1b1f2a)
+  if (assets) scene.fog = new Fog(SKY_COLOR, FOG_NEAR, FOG_FAR)
 
   const camera = new PerspectiveCamera(50, 1, 0.1, 200)
   const tilt = (CAMERA_TILT_DEG * Math.PI) / 180
   const camOffsetY = Math.sin(tilt) * CAMERA_DISTANCE
   const camOffsetZ = Math.cos(tilt) * CAMERA_DISTANCE
 
-  scene.add(new AmbientLight(0xffffff, 0.6))
-  const sun = new DirectionalLight(0xffffff, 1.2)
+  let mapView: MapView | null = null
+  let structuresView: StructuresView | null = null
+  let turretsView: TurretsView | null = null
+  let placement: TurretPlacement = { active: false, selected: null }
+  const sun = new DirectionalLight(0xfff1d6, assets ? 2.1 : 1.2)
   sun.position.set(5, 10, 4)
-  scene.add(sun)
-
-  // Ground on the (x, z) plane — game logic is 2D on this plane.
-  const arenaSize = world.arena.halfSize * 2
-  const ground = new Mesh(
-    new PlaneGeometry(arenaSize, arenaSize),
-    new MeshLambertMaterial({ color: 0x3a4a3a }),
-  )
-  ground.rotation.x = -Math.PI / 2
-  scene.add(ground)
-
-  const grid = new GridHelper(arenaSize, arenaSize / 2, 0x556655, 0x445544)
-  grid.position.y = 0.01
-  scene.add(grid)
+  scene.add(sun, sun.target)
+  if (assets) {
+    // Sky-blue from above, grass-green bounce from below: colorful even in the shade.
+    scene.add(new HemisphereLight(0xd6f0ff, 0x6f9a3c, 1.25))
+    sun.castShadow = shadows
+    const cam = sun.shadow.camera
+    cam.left = -SHADOW_HALF
+    cam.right = SHADOW_HALF
+    cam.top = SHADOW_HALF
+    cam.bottom = -SHADOW_HALF
+    cam.near = 1
+    cam.far = 60
+    sun.shadow.mapSize.set(SHADOW_MAP_SIZE, SHADOW_MAP_SIZE)
+    sun.shadow.bias = -0.0005
+    sun.shadow.normalBias = 0.03
+    mapView = createMapView(scene, assets)
+    createScenery(scene)
+    structuresView = createStructuresView(scene, world, assets)
+    turretsView = createTurretsView(scene, world, assets)
+  } else {
+    scene.add(new AmbientLight(0xffffff, 0.6))
+    // Ground on the (x, z) plane — game logic is 2D on this plane.
+    const arenaSize = world.arena.halfSize * 2
+    const ground = new Mesh(
+      new PlaneGeometry(arenaSize, arenaSize),
+      new MeshLambertMaterial({ color: 0x3a4a3a }),
+    )
+    ground.rotation.x = -Math.PI / 2
+    scene.add(ground)
+    const grid = new GridHelper(arenaSize, arenaSize / 2, 0x556655, 0x445544)
+    grid.position.y = 0.01
+    scene.add(grid)
+  }
+  let lastRenderMs = performance.now()
+  /** What the camera looks at: the player, or the base while placing a turret. */
+  const focus = { x: world.player.x, z: world.player.z }
+  /** Camera easing toward a new focus (per second). */
+  const FOCUS_SPEED = 6
+  /** While placing a turret: zoom out and look a bit south so the whole base clears the bar. */
+  const PLACEMENT_ZOOM = 1.4
+  const PLACEMENT_SHIFT_Z = 3.5
+  /** Seconds the camera takes to come back to the player after placing. */
+  const RETURN_TIME = 0.5
+  let returnTime = 0
+  let zoom = 1
 
   const shadowMat = new MeshBasicMaterial({
     color: 0x000000,
@@ -175,6 +239,9 @@ export function createGameRenderer(
 
   return {
     render(world, alpha) {
+      const nowMs = performance.now()
+      const dt = Math.min(0.1, (nowMs - lastRenderMs) / 1000)
+      lastRenderMs = nowMs
       const p = world.player
       const px = p.prevX + (p.x - p.prevX) * alpha
       const pz = p.prevZ + (p.z - p.prevZ) * alpha
@@ -186,9 +253,40 @@ export function createGameRenderer(
       const hurtFlash = p.hurtTimer > 0 && Math.floor(p.hurtTimer * HURT_BLINK_HZ) % 2 === 0
       bodyMat.color.setHex(hurtFlash ? HURT_COLOR : PLAYER_COLOR)
 
-      camera.position.set(px, camOffsetY, pz + camOffsetZ)
-      camera.lookAt(px, 0, pz)
-      spawnIndicators.update(world, px, pz, performance.now())
+      const fx = placement.active ? (world.map.playerStart?.x ?? 0) : px
+      const fz = placement.active ? (world.map.playerStart?.z ?? 0) + PLACEMENT_SHIFT_Z : pz
+      zoom += ((placement.active ? PLACEMENT_ZOOM : 1) - zoom) * Math.min(1, dt * FOCUS_SPEED)
+      if (Math.abs(zoom - 1) < 0.002) zoom = 1
+      if (placement.active) returnTime = RETURN_TIME
+      if (placement.active || returnTime > 0) {
+        // Ease toward the base, then back to the player for a moment; exact follow otherwise.
+        if (!placement.active) returnTime -= dt
+        const k = Math.min(1, dt * FOCUS_SPEED)
+        focus.x += (fx - focus.x) * k
+        focus.z += (fz - focus.z) * k
+        if (!placement.active && returnTime <= 0) {
+          focus.x = fx
+          focus.z = fz
+          zoom = 1
+        }
+      } else {
+        focus.x = fx
+        focus.z = fz
+      }
+      camera.position.set(focus.x, camOffsetY * zoom, focus.z + camOffsetZ * zoom)
+      camera.lookAt(focus.x, 0, focus.z)
+      spawnIndicators.update(world, px, pz, nowMs)
+      if (mapView) {
+        mapView.update(dt, px, pz)
+        // The shadow box follows the player (snapped to texels to avoid shimmering).
+        const texel = (SHADOW_HALF * 2) / SHADOW_MAP_SIZE
+        const sx = Math.round(focus.x / texel) * texel
+        const sz = Math.round(focus.z / texel) * texel
+        sun.target.position.set(sx, 0, sz)
+        sun.position.set(sx + SUN_OFFSET.x, SUN_OFFSET.y, sz + SUN_OFFSET.z)
+      }
+      structuresView?.update(world, dt, nowMs)
+      turretsView?.update(world, alpha, nowMs, placement)
 
       // Zombies (facing the player).
       let n = 0
@@ -244,6 +342,9 @@ export function createGameRenderer(
       return true
     },
     resize,
+    setTurretPlacement(next) {
+      placement = next
+    },
     stats(out) {
       out.drawCalls = renderer.info.render.calls
       out.triangles = renderer.info.render.triangles

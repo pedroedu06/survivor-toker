@@ -38,7 +38,13 @@ export function updatePlayerDamage(world: World, dt: number): void {
   if (p.hurtTimer > 0) p.hurtTimer = Math.max(0, p.hurtTimer - dt)
   p.sinceHurt += dt
 
-  if (p.hurtTimer === 0 && touchingZombie(world)) {
+  const touching = touchingZombie(world)
+  // A zombie bumping into a hidden player finds them (until they leave the cover).
+  if (touching && p.hidden) {
+    p.exposed = true
+    p.hidden = false
+  }
+  if (p.hurtTimer === 0 && touching) {
     applyDamage(world, world.enemyDef.contactDamage)
   }
 

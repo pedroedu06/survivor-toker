@@ -1,30 +1,87 @@
-import type { World } from '../core/world'
+import { boxDistance } from '../core/navGrid'
+import type { Enemy, World } from '../core/world'
+import type { SlotDef } from '../data/maps'
+import { damageStructure } from './base'
+import { flow, flowDirection, updateNavField } from './navigation'
+import { obstacleHit, resolveObstacles } from './obstacles'
 
-/** Chase the player in a straight line, then resolve overlaps (zombie-zombie, zombie-player). */
+/** How close (beyond its radius) a zombie must be to a wall to hit it. */
+const WALL_REACH = 0.15
+/** Chance that a wandering zombie stands still for a while instead of walking. */
+const IDLE_CHANCE = 0.4
+/** Wander targets are picked up to this far from the zombie. */
+const WANDER_RADIUS = 4
+
+/**
+ * Zombies chase the player along the flow field (around the base, or to a wall to break it
+ * when the player is shut inside). While the player is hidden they stand or wander.
+ * Then overlaps are resolved (zombie-zombie, zombie-player, obstacles).
+ */
 export function updateEnemies(world: World, dt: number): void {
   const pool = world.enemies
   const def = world.enemyDef
   const p = world.player
   const step = def.speed * dt
+  const hidden = p.hidden
+  if (!hidden) updateNavField(world)
 
   for (let i = 0; i < pool.length; i++) {
     const e = pool[i]
     if (!e?.active) continue
     e.prevX = e.x
     e.prevZ = e.z
-    const dx = p.x - e.x
-    const dz = p.z - e.z
-    const dist = Math.hypot(dx, dz)
-    if (dist > 1e-6) {
-      const move = Math.min(step, dist)
-      e.x += (dx / dist) * move
-      e.z += (dz / dist) * move
+    if (hidden) {
+      wander(world, e, step * def.wanderSpeed, dt)
+      continue
+    }
+    e.wanderTimer = 0
+
+    flowDirection(world, e.x, e.z)
+    let move = step
+    if (flow.direct) move = Math.min(step, Math.hypot(p.x - e.x, p.z - e.z))
+    e.x += flow.dx * move
+    e.z += flow.dz * move
+
+    // Pushing against an intact wall/door that blocks the way: break it.
+    const slot = flow.nextSlot
+    const slotDef: SlotDef | undefined = slot >= 0 ? world.map.slots?.[slot] : undefined
+    if (slotDef) {
+      if (boxDistance(slotDef.box, e.x, e.z) <= def.radius + WALL_REACH) {
+        damageStructure(world, slot, def.wallDamage * dt)
+      }
     }
   }
 
   rebuildEnemyHash(world)
   separate(world)
   rebuildEnemyHash(world)
+}
+
+function wander(world: World, e: Enemy, step: number, dt: number): void {
+  e.wanderTimer -= dt
+  if (e.wanderTimer <= 0) {
+    const rng = world.rng
+    if (rng.next() < IDLE_CHANCE) {
+      e.idle = true
+      e.wanderTimer = rng.range(1, 3)
+    } else {
+      e.idle = false
+      const angle = rng.range(0, Math.PI * 2)
+      const dist = rng.range(1, WANDER_RADIUS)
+      const limit = world.arena.halfSize - world.enemyDef.radius
+      e.wanderX = Math.max(-limit, Math.min(limit, e.x + Math.cos(angle) * dist))
+      e.wanderZ = Math.max(-limit, Math.min(limit, e.z + Math.sin(angle) * dist))
+      e.wanderTimer = rng.range(2, 4)
+    }
+  }
+  if (e.idle) return
+  const dx = e.wanderX - e.x
+  const dz = e.wanderZ - e.z
+  const d = Math.hypot(dx, dz)
+  if (d < 0.05) return
+  const move = Math.min(step, d)
+  e.x += (dx / d) * move
+  e.z += (dz / d) * move
 }
 
 export function rebuildEnemyHash(world: World): void {
@@ -78,7 +135,7 @@ function separate(world: World): void {
       b.z += nz * push
     }
 
-    // Zombie-player: zombies never overlap the player (no damage yet).
+    // Zombie-player: zombies never overlap the player.
     const pdx = a.x - p.x
     const pdz = a.z - p.z
     const pd = Math.hypot(pdx, pdz)
@@ -89,7 +146,9 @@ function separate(world: World): void {
       a.z = p.z + nz * playerMin
     }
 
-    a.x = Math.max(-limit, Math.min(a.x, limit))
-    a.z = Math.max(-limit, Math.min(a.z, limit))
+    // Walls, doors and props win over the crowd push.
+    resolveObstacles(world, a.x, a.z, r, false)
+    a.x = Math.max(-limit, Math.min(obstacleHit.x, limit))
+    a.z = Math.max(-limit, Math.min(obstacleHit.z, limit))
   }
 }

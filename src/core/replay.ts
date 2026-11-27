@@ -1,3 +1,4 @@
+import { maps } from '../data/maps'
 import { worldChecksum } from './checksum'
 import { createInputState } from './input'
 import { createInputPlayback, type RunLog } from './inputLog'
@@ -20,7 +21,9 @@ export type ReplayResult = {
  * (0 = never, 1 = every step).
  */
 export function replayRun(log: RunLog, checkEvery = 0): ReplayResult {
-  const world = createWorld({ seed: log.seed })
+  const map = maps[log.map ?? 'testArena']
+  if (!map) throw new Error(`Unknown map in run: ${log.map}`)
+  const world = createWorld({ seed: log.seed, map })
   const playback = createInputPlayback(log)
   const input = createInputState()
   let firstProblem: ReplayResult['firstProblem'] = null

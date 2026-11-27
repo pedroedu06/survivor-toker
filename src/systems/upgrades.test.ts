@@ -115,6 +115,7 @@ describe('damage potion', () => {
     shot.x = 5
     shot.z = 0
     shot.life = 1
+    shot.damage = effectiveDamage(world)
     world.activeProjectiles = 1
     updateCollision(world)
     expect(e.hp).toBeCloseTo(10 - pistol.damage * 1.25 * 1.5)
