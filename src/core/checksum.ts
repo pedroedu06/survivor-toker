@@ -27,6 +27,7 @@ export function worldChecksum(world: World): string {
   mix(world.round.number)
   mix(world.round.killed)
   mix(world.round.spawned)
+  mix(world.round.spawnMask)
   mix(world.activeEnemies)
   mix(world.activeProjectiles)
   for (const e of world.enemies) {

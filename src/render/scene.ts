@@ -22,6 +22,7 @@ import {
   WebGLRenderer,
 } from 'three'
 import type { World } from '../core/world'
+import { createSpawnIndicators } from './spawnIndicators'
 
 /** Camera tilt from the ground plane, in degrees. [provisional] ~55-60 in DESIGN.md. */
 const CAMERA_TILT_DEG = 55
@@ -61,7 +62,16 @@ function shadowDisc(radius: number): CircleGeometry {
   return geo
 }
 
-export function createGameRenderer(canvas: HTMLCanvasElement, world: World): GameRenderer {
+export type RendererOptions = {
+  /** Debug only: draw the spawn point markers on the ground (not in the final game). */
+  showSpawnMarkers?: boolean
+}
+
+export function createGameRenderer(
+  canvas: HTMLCanvasElement,
+  world: World,
+  options: RendererOptions = {},
+): GameRenderer {
   const renderer = new WebGLRenderer({
     canvas,
     antialias: true,
@@ -115,6 +125,9 @@ export function createGameRenderer(canvas: HTMLCanvasElement, world: World): Gam
   const playerShadow = new Mesh(shadowDisc(pDef.radius * 1.2), shadowMat)
   player.add(body, nose, playerShadow)
   scene.add(player)
+
+  // Arc arrows toward the active spawn points (+ ground markers in debug).
+  const spawnIndicators = createSpawnIndicators(scene, world, options.showSpawnMarkers ?? false)
 
   // Zombies: one instanced draw call for bodies, one for shadows.
   const eDef = world.enemyDef
@@ -175,6 +188,7 @@ export function createGameRenderer(canvas: HTMLCanvasElement, world: World): Gam
 
       camera.position.set(px, camOffsetY, pz + camOffsetZ)
       camera.lookAt(px, 0, pz)
+      spawnIndicators.update(world, px, pz, performance.now())
 
       // Zombies (facing the player).
       let n = 0

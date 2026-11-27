@@ -189,6 +189,18 @@ const hp = baseHp * enemyGrowth ** round
 - Infinity ranking is separate per difficulty.
 - Whoever reaches round 1000 deserves it: prestige reward (exclusive skin/title), no power.
 
+## Maps
+
+- [decided] **5 maps at launch.** Each map is data (`data/maps.ts`): size and its own **zombie spawn points**.
+- [decided] Zombies no longer spawn in a ring around the player: they come out of the map's spawn points and then chase the player (unchanged).
+- [decided] Test map (`testArena`): 4 spawn points at the cardinal directions (north, south, east, west), toward the edges but not at the walls.
+- [decided] Each round randomly picks which spawn points are **active**: few early, more in high rounds. Every zombie of the round comes out of one of the active points.
+- [decided] A zombie can spawn right next to the player (like the windows in CoD Zombies): standing near a spawn point is the player's risk.
+- [decided] **Arc arrows** on the ground around the player point to the active spawn points during a round. Spawn points are marked on the ground ("portals") while testing; the final game has no marker.
+- [provisional] Test map numbers: arena 60x60, points 25 units from the center (walls at 30), zombies spawn within 2.5 units of the point; active points = `min(points, 1 + floor((round - 1) / 4))` (1 in rounds 1-4, 2 in 5-8, 3 in 9-12, all 4 from 13).
+- [decided] Maps are built in Blender following `MAPS.md` (1 u = 1 m, north = +Y, `spawn_*` / `player_start` empties, `col_*` collision shapes, `.glb`).
+- [open] The 5 real maps: layout, obstacles, theme, models. Obstacle collision + zombie pathfinding come with the first map that has obstacles.
+
 ## Modes and rewards
 
 - **Story:** missions and bosses. Defeating a boss gives their skin + a special card. Also coins and crates, same idea as Rush with its own rewards.

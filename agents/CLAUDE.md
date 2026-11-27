@@ -2,7 +2,7 @@
 
 Mobile game: survivors-like with auto-shoot, CoD Zombies-style rounds, a weapon Mystery Box, cards as upgrades, 3D with a tilted top-down camera. Android first, offline in v1.
 
-The full memory of ideas and decisions is in `DESIGN.md`. Before implementing any system, read its relevant section.
+The full memory of ideas and decisions is in `DESIGN.md`. The map standard (scale, axes, spawn empties, collision, export) is in `MAPS.md`. Before implementing any system, read its relevant section.
 
 ## Current phase
 

@@ -74,6 +74,10 @@ export function checkInvariants(world: World): string[] {
       bad(`${enemies} zombies alive in the intermission`)
   }
   if (r.phase === 'failed' && !r.failReason) bad('run failed without a reason')
+  if (r.number > 0 && r.phase === 'active' && r.spawnMask === 0)
+    bad('active round with no spawn point')
+  if (r.spawnMask >= 1 << world.map.spawnPoints.length)
+    bad(`spawnMask ${r.spawnMask} has unknown points`)
 
   if (!Number.isInteger(world.coins) || world.coins < 0) bad(`coins invalid (${world.coins})`)
   for (const item of shopItems) {

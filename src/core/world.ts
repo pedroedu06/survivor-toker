@@ -1,6 +1,7 @@
 import { type ArenaDef, arena as defaultArena } from '../data/arena'
 import { economy as defaultEconomy, type EconomyDef } from '../data/economy'
 import { type EnemyDef, walker } from '../data/enemies'
+import { type MapDef, testArena } from '../data/maps'
 import { player as defaultPlayer, type PlayerDef } from '../data/player'
 import { rounds as defaultRounds, type RoundsDef } from '../data/rounds'
 import { spawn as defaultSpawn, type SpawnDef } from '../data/spawn'
@@ -76,6 +77,8 @@ export type RoundState = {
   spawnInterval: number
   /** Why the run ended, when phase is 'failed'. */
   failReason: FailReason | null
+  /** Bitmask of the map spawn points active this round (bit i = map.spawnPoints[i]). */
+  spawnMask: number
   /** Coins paid for the last cleared round (shown in the intermission). */
   lastReward: number
 }
@@ -87,6 +90,7 @@ export type World = {
   rng: Rng
   tick: number
   arena: ArenaDef
+  map: MapDef
   playerDef: PlayerDef
   weapon: WeaponDef
   enemyDef: EnemyDef
@@ -120,6 +124,8 @@ export type World = {
 export type WorldOptions = {
   seed?: number
   arena?: ArenaDef
+  /** Map (spawn points, size). The arena size comes from it unless `arena` is given. */
+  map?: MapDef
   playerDef?: PlayerDef
   weapon?: WeaponDef
   enemyDef?: EnemyDef
@@ -140,6 +146,7 @@ function initialRound(): RoundState {
     spawnInterval: 0,
     failReason: null,
     lastReward: 0,
+    spawnMask: 0,
   }
 }
 
@@ -195,7 +202,8 @@ export function resetWorld(world: World, seed: number = world.seed): void {
 
 export function createWorld(options: WorldOptions = {}): World {
   const seed = options.seed ?? 1
-  const arena = options.arena ?? defaultArena
+  const map = options.map ?? testArena
+  const arena = options.arena ?? { ...defaultArena, halfSize: map.halfSize }
 
   const projectiles: Projectile[] = []
   for (let i = 0; i < arena.maxProjectiles; i++) {
@@ -211,6 +219,7 @@ export function createWorld(options: WorldOptions = {}): World {
     rng: createRng(seed),
     tick: 0,
     arena,
+    map,
     playerDef: options.playerDef ?? defaultPlayer,
     weapon: options.weapon ?? pistol,
     enemyDef: options.enemyDef ?? walker,

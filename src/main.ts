@@ -37,7 +37,8 @@ const DEBUG = isDebugEnabled()
 const INVARIANT_EVERY = 30
 
 const world = createWorld({ seed: newSeed() })
-const renderer = createGameRenderer(canvas, world)
+// Spawn markers ("portals") stay visible while testing; remove for the final game.
+const renderer = createGameRenderer(canvas, world, { showSpawnMarkers: true })
 const input = createInputSource(ui, renderer.screenToGround)
 const recorder = createInputRecorder(world.seed)
 const clock = createFixedClock()

@@ -106,7 +106,7 @@ describe('stepWorld', () => {
   test('performance reference: full horde step time', () => {
     const world = createWorld({
       seed: 3,
-      spawnDef: { maxAlive: 120, minDistance: 3, maxDistance: 18 },
+      spawnDef: { maxAlive: 120 },
       // Huge round that spawns one zombie per step.
       roundsDef: {
         ...rounds,
