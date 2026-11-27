@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'bun:test'
+import { rounds } from '../data/rounds'
 import { createInputState } from './input'
 import { FIXED_DT } from './loop'
 import { createRng } from './rng'
@@ -30,10 +31,46 @@ describe('stepWorld', () => {
     expect(a.tick).toBe(60 * 30)
   })
 
-  test('zombies spawn and get killed over time', () => {
-    const world = simulate(9, 60 * 60)
-    expect(world.activeEnemies).toBeGreaterThan(0)
+  test('a player aiming at the nearest zombie clears rounds', () => {
+    const world = createWorld({ seed: 9 })
+    const input = createInputState()
+    let sawZombies = false
+    for (let i = 0; i < 60 * 120; i++) {
+      // Tiny bot: aim at the nearest zombie, stand still.
+      let best = Number.POSITIVE_INFINITY
+      for (const e of world.enemies) {
+        if (!e.active) continue
+        sawZombies = true
+        const d = Math.hypot(e.x - world.player.x, e.z - world.player.z)
+        if (d < best) {
+          best = d
+          input.aimX = e.x - world.player.x
+          input.aimZ = e.z - world.player.z
+        }
+      }
+      input.skipIntermission = world.round.phase === 'intermission'
+      stepWorld(world, input, FIXED_DT)
+    }
+    expect(sawZombies).toBe(true)
     expect(world.kills).toBeGreaterThan(0)
+    expect(world.round.number).toBeGreaterThan(1)
+  })
+
+  test('determinism includes the round state', () => {
+    expect(simulate(42, 60 * 60).round).toEqual(simulate(42, 60 * 60).round)
+  })
+
+  test('mission failed freezes the simulation', () => {
+    const world = simulate(9, 60 * 10)
+    world.round.phase = 'failed'
+    const before = structuredClone({
+      player: world.player,
+      enemies: world.enemies,
+      tick: world.tick,
+    })
+    const input = { ...createInputState(), moveX: 1, aimX: 1 }
+    for (let i = 0; i < 120; i++) stepWorld(world, input, FIXED_DT)
+    expect({ player: world.player, enemies: world.enemies, tick: world.tick }).toEqual(before)
   })
 
   test('saves the previous player position for interpolation', () => {
@@ -54,10 +91,17 @@ describe('stepWorld', () => {
   test('performance reference: full horde step time', () => {
     const world = createWorld({
       seed: 3,
-      spawnDef: { interval: 0.001, maxAlive: 120, minDistance: 3, maxDistance: 18 },
+      spawnDef: { maxAlive: 120, minDistance: 3, maxDistance: 18 },
+      // Huge round that spawns one zombie per step.
+      roundsDef: {
+        ...rounds,
+        baseCount: 10_000,
+        spawnIntervalStart: 0.001,
+        spawnIntervalMin: 0.001,
+      },
     })
     const input = createInputState()
-    for (let i = 0; i < 60; i++) stepWorld(world, input, FIXED_DT) // fill the horde
+    for (let i = 0; i < 180; i++) stepWorld(world, input, FIXED_DT) // fill the horde
     const steps = 600
     const start = performance.now()
     for (let i = 0; i < steps; i++) {

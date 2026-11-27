@@ -14,6 +14,10 @@ export type InputSource = {
   readonly state: InputState
   /** Samples devices into `state`. Call once per rendered frame, before stepping. */
   poll(playerX: number, playerZ: number): void
+  /** Queues a one-step "skip intermission" command (from the HUD button). */
+  requestSkip(): void
+  /** Call after each simulation step so one-step commands are not repeated. */
+  consumeCommands(): void
   dispose(): void
 }
 
@@ -34,6 +38,7 @@ export function createInputSource(
   const dir = { x: 0, z: 0 }
   const ground = { x: 0, z: 0 }
 
+  let skipRequested = false
   let mouseActive = false
   let mouseX = 0
   let mouseY = 0
@@ -68,6 +73,16 @@ export function createInputSource(
         state.aimX = ground.x - playerX
         state.aimZ = ground.z - playerZ
       }
+
+      // Kept until a step consumes it, even if this frame runs no step.
+      if (skipRequested) state.skipIntermission = true
+      skipRequested = false
+    },
+    requestSkip() {
+      skipRequested = true
+    },
+    consumeCommands() {
+      state.skipIntermission = false
     },
     dispose() {
       moveStick.dispose()

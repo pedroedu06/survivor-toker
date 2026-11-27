@@ -45,7 +45,7 @@ describe('updateMovement', () => {
 
   test('aim input sets a normalized facing; no aim keeps the last one', () => {
     const world = createWorld()
-    updateMovement(world, { moveX: -1, moveZ: 0, aimX: 3, aimZ: 4 }, FIXED_DT)
+    updateMovement(world, { ...input(-1, 0), aimX: 3, aimZ: 4 }, FIXED_DT)
     expect(world.player.facingX).toBeCloseTo(0.6)
     expect(world.player.facingZ).toBeCloseTo(0.8)
     updateMovement(world, input(0, 0), FIXED_DT)

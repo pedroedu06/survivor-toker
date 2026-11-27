@@ -27,6 +27,7 @@ export function updateCollision(world: World): void {
         e.active = false
         world.activeEnemies--
         world.kills++
+        world.round.killed++
       }
       break
     }

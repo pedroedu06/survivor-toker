@@ -1,7 +1,5 @@
-/** [provisional] Continuous spawn until rounds exist (Phase 2). */
+/** [provisional] Where and how many zombies can be alive. Pacing comes from `rounds.ts`. */
 export type SpawnDef = {
-  /** Seconds between spawns. */
-  interval: number
   /** Max zombies alive at once (performance budget in DESIGN.md: ~120). */
   maxAlive: number
   /** Spawn ring around the player, outside the camera view. */
@@ -10,7 +8,6 @@ export type SpawnDef = {
 }
 
 export const spawn: SpawnDef = {
-  interval: 0.4,
   maxAlive: 120,
   minDistance: 14,
   maxDistance: 18,

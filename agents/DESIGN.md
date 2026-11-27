@@ -56,7 +56,10 @@ src/
 - [provisional] Manual aim, twin-stick, for testing: right virtual joystick aims on mobile, mouse aims on PC. Fire stays automatic (no button) toward the aim; releasing the right stick keeps the last aim. Movement does not change the aim. (Replaces "shoot where you move", which made fleeing shoot away from the horde and felt too hard.)
 - [decided] Each weapon has a `targeting`; cards can improve/change it.
 - [idea] Settings option to choose the aim mode: manual (twin-stick/mouse) or aim lock (`nearest`: auto-aim at the closest zombie). Also possibly automatic vs manual fire (fire button). Details open.
-- [provisional] A round ends when all zombies are dead. If the player takes too long, a time limit passes and more zombies start spawning.
+- [decided] Each round has a time limit. Killing every zombie of the round ends it early. If the time runs out with zombies alive: **mission failed**, back to the lobby (until the lobby exists: a "mission failed" screen with "play again").
+- [decided] Intermission between rounds with a **skip button**; when it ends, the next round starts. Round 1 starts right away. No zombies during the intermission.
+- [decided] Zombies get stronger the further you go, so the player needs upgrades (weapon, cards).
+- [provisional] Numbers (`data/rounds.ts`): time limit 5 min, intermission 1 min, count `6 + round * 2` (max 120 alive at once, the rest spawn as others die), HP `3 * 1.06^round`, speed constant for now, spawn interval `1.0 - 0.05 * round` s (min 0.25 s).
 - [decided] Between rounds: use the box, sell cards.
 - [decided] Kills give **points** (spent on the Mystery Box) and **XP** (level up, pick 1 of 3 cards).
 
@@ -196,7 +199,6 @@ When reporting a problem: say what was expected, what happened, and use "copy ru
 ## Open decisions
 
 - Game name, exact art style, theme/universe.
-- Round: timer vs kill-all (assumed: kill-all + time limit).
 - Initial list of weapons, cards and enemies.
 - Character details (bonuses, the huntress's enemy type, melee weapon).
 - Enemy curve after round ~100.

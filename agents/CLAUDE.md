@@ -6,7 +6,7 @@ The full memory of ideas and decisions is in `DESIGN.md`. Before implementing an
 
 ## Current phase
 
-**Milestone 1** (see "Planned phases" in `DESIGN.md`). Update this line when the phase changes.
+**Milestone 1** (see "Planned phases" in `DESIGN.md`), with **phase 2 (rounds)** brought forward at the user's request. Still pending from Milestone 1: player health/damage, death and restart, dev panel. Update this line when the phase changes.
 
 ## Stack and commands
 

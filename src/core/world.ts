@@ -1,6 +1,7 @@
 import { type ArenaDef, arena as defaultArena } from '../data/arena'
 import { type EnemyDef, walker } from '../data/enemies'
 import { player as defaultPlayer, type PlayerDef } from '../data/player'
+import { rounds as defaultRounds, type RoundsDef } from '../data/rounds'
 import { spawn as defaultSpawn, type SpawnDef } from '../data/spawn'
 import { pistol, type WeaponDef } from '../data/weapons'
 import { createRng, type Rng } from './rng'
@@ -43,6 +44,24 @@ export type Enemy = {
   hp: number
 }
 
+export type RoundPhase = 'active' | 'intermission' | 'failed'
+
+export type RoundState = {
+  /** Current round. 0 = not started yet (the round director starts round 1 on the first step). */
+  number: number
+  phase: RoundPhase
+  /** Seconds left in the current phase. */
+  timer: number
+  /** Zombies in this round, how many already spawned and how many were killed. */
+  total: number
+  spawned: number
+  killed: number
+  /** HP of zombies spawned this round. */
+  enemyHp: number
+  /** Seconds between spawns this round. */
+  spawnInterval: number
+}
+
 export type World = {
   seed: number
   rng: Rng
@@ -52,6 +71,8 @@ export type World = {
   weapon: WeaponDef
   enemyDef: EnemyDef
   spawnDef: SpawnDef
+  roundsDef: RoundsDef
+  round: RoundState
   player: Player
   /** Fixed-size pools. Never grow; inactive slots are reused. */
   projectiles: Projectile[]
@@ -74,6 +95,49 @@ export type WorldOptions = {
   weapon?: WeaponDef
   enemyDef?: EnemyDef
   spawnDef?: SpawnDef
+  roundsDef?: RoundsDef
+}
+
+function initialRound(): RoundState {
+  return {
+    number: 0,
+    phase: 'active',
+    timer: 0,
+    total: 0,
+    spawned: 0,
+    killed: 0,
+    enemyHp: 0,
+    spawnInterval: 0,
+  }
+}
+
+function initialPlayer(): Player {
+  return { x: 0, z: 0, prevX: 0, prevZ: 0, facingX: 0, facingZ: -1, fireCooldown: 0 }
+}
+
+/**
+ * Restarts the run in place (same pools, same definitions). Used by "play again".
+ * Not for the game loop: it allocates a little.
+ */
+export function resetWorld(world: World, seed: number = world.seed): void {
+  world.seed = seed
+  world.rng = createRng(seed)
+  world.tick = 0
+  world.round = initialRound()
+  world.player = initialPlayer()
+  for (const p of world.projectiles) {
+    p.active = false
+    p.x = p.z = p.prevX = p.prevZ = p.vx = p.vz = p.life = 0
+  }
+  for (const e of world.enemies) {
+    e.active = false
+    e.x = e.z = e.prevX = e.prevZ = e.hp = 0
+  }
+  world.activeProjectiles = 0
+  world.activeEnemies = 0
+  world.kills = 0
+  world.spawnTimer = 0
+  world.enemyHash.clear()
 }
 
 export function createWorld(options: WorldOptions = {}): World {
@@ -98,7 +162,9 @@ export function createWorld(options: WorldOptions = {}): World {
     weapon: options.weapon ?? pistol,
     enemyDef: options.enemyDef ?? walker,
     spawnDef: options.spawnDef ?? defaultSpawn,
-    player: { x: 0, z: 0, prevX: 0, prevZ: 0, facingX: 0, facingZ: -1, fireCooldown: 0 },
+    roundsDef: options.roundsDef ?? defaultRounds,
+    round: initialRound(),
+    player: initialPlayer(),
     projectiles,
     enemies,
     activeProjectiles: 0,

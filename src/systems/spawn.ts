@@ -1,14 +1,20 @@
 import type { World } from '../core/world'
 
-/** Continuous spawn on a ring around the player, outside the camera view. */
+/**
+ * Spawns the current round's zombies on a ring around the player, outside the camera view.
+ * Only during an active round, up to the round total and the max alive at once.
+ */
 export function updateSpawn(world: World, dt: number): void {
-  const def = world.spawnDef
+  const r = world.round
+  if (r.phase !== 'active' || r.spawned >= r.total) return
+
   world.spawnTimer -= dt
-  while (world.spawnTimer <= 0) {
-    world.spawnTimer += def.interval
-    if (world.activeEnemies >= def.maxAlive) continue
-    spawnEnemy(world)
-  }
+  if (world.spawnTimer > 0) return
+  world.spawnTimer += r.spawnInterval
+  if (world.spawnTimer < 0) world.spawnTimer = 0
+
+  if (world.activeEnemies >= world.spawnDef.maxAlive) return
+  if (spawnEnemy(world)) r.spawned++
 }
 
 export function spawnEnemy(world: World): boolean {
@@ -35,7 +41,7 @@ export function spawnEnemy(world: World): boolean {
   e.z = z
   e.prevX = x
   e.prevZ = z
-  e.hp = world.enemyDef.hp
+  e.hp = world.round.enemyHp || world.enemyDef.hp
   world.activeEnemies++
   return true
 }

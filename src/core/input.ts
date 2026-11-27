@@ -13,8 +13,10 @@ export type InputState = {
    */
   aimX: number
   aimZ: number
+  /** One-step command: skip the current intermission. */
+  skipIntermission: boolean
 }
 
 export function createInputState(): InputState {
-  return { moveX: 0, moveZ: 0, aimX: 0, aimZ: 0 }
+  return { moveX: 0, moveZ: 0, aimX: 0, aimZ: 0, skipIntermission: false }
 }
