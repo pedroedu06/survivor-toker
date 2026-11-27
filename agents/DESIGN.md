@@ -60,8 +60,28 @@ src/
 - [decided] Intermission between rounds with a **skip button**; when it ends, the next round starts. Round 1 starts right away. No zombies during the intermission.
 - [decided] Zombies get stronger the further you go, so the player needs upgrades (weapon, cards).
 - [provisional] Numbers (`data/rounds.ts`): time limit 5 min, intermission 1 min, count `6 + round * 2` (max 120 alive at once, the rest spawn as others die), HP `3 * 1.06^round`, speed constant for now, spawn interval `1.0 - 0.05 * round` s (min 0.25 s).
-- [decided] Between rounds: use the box, sell cards.
+- [decided] Between rounds: use the box, sell cards, use the shop.
 - [decided] Kills give **points** (spent on the Mystery Box) and **XP** (level up, pick 1 of 3 cards).
+
+### Player health
+
+- [decided] 100 HP + 100 shield at the start. Damage hits the shield first; what is left over goes to HP.
+- [decided] HP regenerates after a few seconds without taking damage. The shield **never** regenerates: it only comes back by buying it in the shop.
+- [provisional] Regen starts 4 s after the last hit, at 20 HP/s up to max. Contact damage 10 per zombie touch, 0.5 s invulnerability after a hit (max 20 damage/s when surrounded). Default values for testing.
+- [decided] HP at 0 = mission failed ("you died"), same screen as running out of time.
+- [idea] Zombie types that hit harder, once the game has more body.
+
+### Shop
+
+- [decided] The shop is **in-run**, used between waves. Planned right after player health.
+- [decided] Paid with **in-run coins** ("moedinhas"): earned by winning waves and other actions (e.g. kills; details to come). They only exist inside the run.
+- [decided] What it sells:
+  - **weapon upgrades** (damage, fire rate, etc.);
+  - **potions** that help in the waves (e.g. heal, temporary buffs);
+  - the **shield** (refill and/or more max shield);
+  - **training ("estudo") for the character** (character upgrades, valid for the run, so it does not break "meta-progression is unlocks only").
+- [open] Coin values (per wave, per kill), the currency's name (so it is not confused with the lobby's meta "coins"), and whether it replaces the "points" spent on the Mystery Box.
+- [open] Exact list of upgrades, potions and training, prices, and how it combines with cards and the Mystery Box.
 
 ### Mystery Box (in-run)
 
@@ -206,11 +226,13 @@ When reporting a problem: say what was expected, what happened, and use "copy ru
 - Chances per offer vs per slot (assumed: per offer).
 - Screen orientation: portrait vs landscape (today it follows the phone rotation).
 - Aim mode in settings: manual vs aim lock as the default; manual fire button or not.
+- Shop: in-run coin values and name, item list and prices (see "Shop").
 
 ## Planned phases
 
 1. **Milestone 1 (functional game):** 3D scene with tilted top-down camera, player (capsule) with virtual joystick, auto-shoot, zombies (placeholders) coming from off-screen, health and damage, death and restart. Debug overlay and dev panel. Running in the browser in mobile mode and on phone/emulator. No menus, no cards. Criteria: 60 fps with ~100 zombies on a mid-range phone, `core/` testable with `bun test`.
-2. Rounds and spawn director.
+2. Rounds and spawn director. (Done ahead of the rest of Milestone 1.)
+2.5. **Shop** (after player health): weapon upgrades, potions for the waves, character training. See "Shop" under Gameplay.
 3. Cards and modifiers (5 slots, tiers, level up).
 4. Mystery Box and 2 weapon slots.
 5. Characters.

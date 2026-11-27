@@ -8,6 +8,8 @@ export type EnemyDef = {
   /** Visual height in world units (render only). */
   height: number
   hp: number
+  /** Damage dealt to the player on contact (see player hurtCooldown). */
+  contactDamage: number
 }
 
 export const walker: EnemyDef = {
@@ -16,6 +18,7 @@ export const walker: EnemyDef = {
   radius: 0.42,
   height: 1.0,
   hp: 3,
+  contactDamage: 10,
 }
 
 export const enemies = { walker } as const

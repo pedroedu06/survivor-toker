@@ -31,6 +31,7 @@ export function createDebugOverlay(parent: HTMLElement): DebugOverlay {
         `FPS ${fps.toFixed(0)}  tick ${world.tick}`,
         `enemies ${world.activeEnemies}  kills ${world.kills}`,
         `projectiles ${world.activeProjectiles}`,
+        `hp ${world.player.hp.toFixed(0)}  shield ${world.player.shield.toFixed(0)}${world.debugGod ? '  GOD' : ''}`,
         `round ${world.round.number} ${world.round.phase} ${world.round.timer.toFixed(1)}s`,
         `spawned ${world.round.spawned}/${world.round.total}  hp ${world.round.enemyHp.toFixed(1)}`,
       ].join('\n')

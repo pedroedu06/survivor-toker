@@ -64,6 +64,10 @@ if (debug) {
       world.activeEnemies = 0
       startRound(world, n)
     },
+    /** God mode: the player takes no damage. */
+    setGod(on: boolean) {
+      world.debugGod = on
+    },
     /** Same as pressing the "skip" button. */
     skip() {
       input.requestSkip()

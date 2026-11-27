@@ -86,6 +86,7 @@ describe('updateRounds', () => {
       updateRounds(world, noInput, FIXED_DT)
     }
     expect(world.round.phase).toBe('failed')
+    expect(world.round.failReason).toBe('timeUp')
     expect(world.round.timer).toBe(0)
   })
 })

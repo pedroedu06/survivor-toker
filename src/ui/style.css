@@ -39,7 +39,7 @@ body {
 
 .debug-overlay {
   position: absolute;
-  top: calc(env(safe-area-inset-top) + 52px);
+  top: calc(env(safe-area-inset-top) + 96px);
   left: calc(env(safe-area-inset-left) + 8px);
   padding: 4px 8px;
   border-radius: 4px;
@@ -263,5 +263,62 @@ body {
 }
 
 .hud[data-phase="failed"] .hud-banner {
+  display: none;
+}
+
+/* Shield + health bars, under the round pill. */
+.hud-bars {
+  position: absolute;
+  top: calc(env(safe-area-inset-top) + 50px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: min(220px, 60vw);
+}
+
+.hud-bar {
+  position: relative;
+  height: 16px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: rgb(0 0 0 / 50%);
+  font:
+    700 11px / 16px system-ui,
+    sans-serif;
+}
+
+.hud-bar-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 100%;
+  transition: width 120ms linear;
+}
+
+.hud-bar--shield .hud-bar-fill {
+  background: linear-gradient(#5bb8ff, #2f7fd6);
+}
+
+.hud-bar--health .hud-bar-fill {
+  background: linear-gradient(#6fdc6f, #2e9e4a);
+}
+
+.hud-bar-label,
+.hud-bar-value {
+  position: relative;
+  padding: 0 8px;
+}
+
+.hud-bar-value {
+  position: absolute;
+  right: 0;
+}
+
+.hud-bar.empty {
+  opacity: 0.5;
+}
+
+.hud[data-phase="failed"] .hud-bars {
   display: none;
 }

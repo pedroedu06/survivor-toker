@@ -38,6 +38,7 @@ export function updateRounds(world: World, input: InputState, dt: number): void 
       if (r.timer <= 0) {
         r.timer = 0
         r.phase = 'failed'
+        r.failReason = 'timeUp'
       }
       return
 

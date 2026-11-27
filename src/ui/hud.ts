@@ -41,6 +41,10 @@ export function createHud(parent: HTMLElement, callbacks: HudCallbacks): Hud {
   const timerLabel = el('div', 'hud-timer', top)
   const zombiesLabel = el('div', 'hud-zombies', top)
 
+  const bars = el('div', 'hud-bars', root)
+  const shieldBar = createBar(bars, 'hud-bar--shield', strings.shield)
+  const healthBar = createBar(bars, 'hud-bar--health', strings.health)
+
   const banner = el('div', 'hud-banner', root)
 
   const intermission = el('div', 'hud-intermission', root)
@@ -54,7 +58,7 @@ export function createHud(parent: HTMLElement, callbacks: HudCallbacks): Hud {
   const failed = el('div', 'hud-failed', root)
   const failedCard = el('div', 'hud-card', failed)
   el('h1', 'hud-failed-title', failedCard).textContent = strings.missionFailed
-  el('p', 'hud-failed-reason', failedCard).textContent = strings.timeUp
+  const reasonLabel = el('p', 'hud-failed-reason', failedCard)
   const reachedLabel = el('p', 'hud-stat', failedCard)
   const killsLabel = el('p', 'hud-stat', failedCard)
   const playAgainButton = el('button', 'hud-button hud-button--primary', failedCard)
@@ -104,6 +108,7 @@ export function createHud(parent: HTMLElement, callbacks: HudCallbacks): Hud {
         root.dataset.phase = r.phase
         if (r.phase === 'intermission') setText(clearedLabel, strings.roundCleared(r.number))
         if (r.phase === 'failed') {
+          setText(reasonLabel, r.failReason === 'died' ? strings.died : strings.timeUp)
           setText(reachedLabel, strings.reachedRound(r.number))
           setText(killsLabel, strings.totalKills(world.kills))
         }
@@ -121,6 +126,34 @@ export function createHud(parent: HTMLElement, callbacks: HudCallbacks): Hud {
         shownZombies = left
         setText(zombiesLabel, strings.zombiesLeft(left))
       }
+
+      const p = world.player
+      shieldBar.set(p.shield, world.playerDef.maxShield)
+      healthBar.set(p.hp, world.playerDef.maxHp)
+    },
+  }
+}
+
+type Bar = { set(value: number, max: number): void }
+
+/** Labelled bar (e.g. shield, health). Only writes the DOM when the shown integer changes. */
+function createBar(parent: HTMLElement, modifier: string, label: string): Bar {
+  const bar = el('div', `hud-bar ${modifier}`, parent)
+  const fill = el('div', 'hud-bar-fill', bar)
+  el('span', 'hud-bar-label', bar).textContent = label
+  const value = el('span', 'hud-bar-value', bar)
+  let shown = -1
+  let shownMax = -1
+  return {
+    set(v, max) {
+      // Round up so a sliver of HP never shows as 0.
+      const n = Math.ceil(v)
+      if (n === shown && max === shownMax) return
+      shown = n
+      shownMax = max
+      fill.style.width = `${max > 0 ? (n / max) * 100 : 0}%`
+      value.textContent = String(n)
+      bar.classList.toggle('empty', n <= 0)
     },
   }
 }

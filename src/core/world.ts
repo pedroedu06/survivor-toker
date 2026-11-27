@@ -21,6 +21,13 @@ export type Player = {
   facingZ: number
   /** Seconds until the next shot. */
   fireCooldown: number
+  hp: number
+  /** Absorbs damage before HP. Never regenerates. */
+  shield: number
+  /** Invulnerability left after a hit, in seconds. */
+  hurtTimer: number
+  /** Seconds since the last hit (HP regen starts after `regenDelay`). */
+  sinceHurt: number
 }
 
 export type Projectile = {
@@ -60,7 +67,11 @@ export type RoundState = {
   enemyHp: number
   /** Seconds between spawns this round. */
   spawnInterval: number
+  /** Why the run ended, when phase is 'failed'. */
+  failReason: FailReason | null
 }
+
+export type FailReason = 'timeUp' | 'died'
 
 export type World = {
   seed: number
@@ -86,6 +97,8 @@ export type World = {
   enemyHash: SpatialHash
   /** Scratch buffer for hash queries (no allocation in the loop). */
   queryBuffer: Int32Array
+  /** Debug only (god mode): the player takes no damage. */
+  debugGod: boolean
 }
 
 export type WorldOptions = {
@@ -108,11 +121,24 @@ function initialRound(): RoundState {
     killed: 0,
     enemyHp: 0,
     spawnInterval: 0,
+    failReason: null,
   }
 }
 
-function initialPlayer(): Player {
-  return { x: 0, z: 0, prevX: 0, prevZ: 0, facingX: 0, facingZ: -1, fireCooldown: 0 }
+function initialPlayer(def: PlayerDef): Player {
+  return {
+    x: 0,
+    z: 0,
+    prevX: 0,
+    prevZ: 0,
+    facingX: 0,
+    facingZ: -1,
+    fireCooldown: 0,
+    hp: def.maxHp,
+    shield: def.maxShield,
+    hurtTimer: 0,
+    sinceHurt: 0,
+  }
 }
 
 /**
@@ -124,7 +150,7 @@ export function resetWorld(world: World, seed: number = world.seed): void {
   world.rng = createRng(seed)
   world.tick = 0
   world.round = initialRound()
-  world.player = initialPlayer()
+  world.player = initialPlayer(world.playerDef)
   for (const p of world.projectiles) {
     p.active = false
     p.x = p.z = p.prevX = p.prevZ = p.vx = p.vz = p.life = 0
@@ -164,7 +190,7 @@ export function createWorld(options: WorldOptions = {}): World {
     spawnDef: options.spawnDef ?? defaultSpawn,
     roundsDef: options.roundsDef ?? defaultRounds,
     round: initialRound(),
-    player: initialPlayer(),
+    player: initialPlayer(options.playerDef ?? defaultPlayer),
     projectiles,
     enemies,
     activeProjectiles: 0,
@@ -173,5 +199,6 @@ export function createWorld(options: WorldOptions = {}): World {
     spawnTimer: 0,
     enemyHash: createSpatialHash(arena.halfSize, HASH_CELL_SIZE, arena.maxEnemies),
     queryBuffer: new Int32Array(arena.maxEnemies),
+    debugGod: false,
   }
 }

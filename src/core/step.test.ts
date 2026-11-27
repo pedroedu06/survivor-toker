@@ -28,11 +28,12 @@ describe('stepWorld', () => {
     expect(a.projectiles).toEqual(b.projectiles)
     expect(a.enemies).toEqual(b.enemies)
     expect(a.kills).toBe(b.kills)
-    expect(a.tick).toBe(60 * 30)
+    expect(a.tick).toBe(b.tick)
   })
 
   test('a player aiming at the nearest zombie clears rounds', () => {
     const world = createWorld({ seed: 9 })
+    world.debugGod = true // this test is about rounds, not survival
     const input = createInputState()
     let sawZombies = false
     for (let i = 0; i < 60 * 120; i++) {
@@ -54,6 +55,19 @@ describe('stepWorld', () => {
     expect(sawZombies).toBe(true)
     expect(world.kills).toBeGreaterThan(0)
     expect(world.round.number).toBeGreaterThan(1)
+  })
+
+  test('a player who never shoots back dies to the horde', () => {
+    const world = createWorld({ seed: 11 })
+    const input = createInputState()
+    input.aimX = 1 // shoots right; zombies from every other side reach him
+    for (let i = 0; i < 60 * 300 && world.round.phase !== 'failed'; i++) {
+      stepWorld(world, input, FIXED_DT)
+    }
+    expect(world.round.phase).toBe('failed')
+    expect(world.round.failReason).toBe('died')
+    expect(world.player.hp).toBe(0)
+    expect(world.player.shield).toBe(0)
   })
 
   test('determinism includes the round state', () => {

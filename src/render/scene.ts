@@ -31,6 +31,10 @@ const MAX_DPR = 2
 /** Chest height of a ~1.1-tall character. */
 const PROJECTILE_HEIGHT = 0.6
 const SHADOW_OPACITY = 0.35
+const PLAYER_COLOR = 0x4fa3ff
+const HURT_COLOR = 0xffffff
+/** Color toggles per second while the player is invulnerable after a hit. */
+const HURT_BLINK_HZ = 16
 
 export type GameRenderer = {
   /** Draws the world, interpolating between the last two sim steps with `alpha`. */
@@ -99,10 +103,8 @@ export function createGameRenderer(canvas: HTMLCanvasElement, world: World): Gam
   // Placeholder player: capsule + "nose" showing the facing + blob shadow (no shadow maps).
   const pDef = world.playerDef
   const player = new Group()
-  const body = new Mesh(
-    footCapsule(pDef.radius, pDef.height),
-    new MeshLambertMaterial({ color: 0x4fa3ff }),
-  )
+  const bodyMat = new MeshLambertMaterial({ color: PLAYER_COLOR })
+  const body = new Mesh(footCapsule(pDef.radius, pDef.height), bodyMat)
   const nose = new Mesh(
     new BoxGeometry(0.22, 0.22, 0.3),
     new MeshLambertMaterial({ color: 0xffd24f }),
@@ -164,6 +166,10 @@ export function createGameRenderer(canvas: HTMLCanvasElement, world: World): Gam
 
       player.position.set(px, 0, pz)
       player.rotation.y = Math.atan2(p.facingX, p.facingZ)
+
+      // Blink while invulnerable after a hit.
+      const hurtFlash = p.hurtTimer > 0 && Math.floor(p.hurtTimer * HURT_BLINK_HZ) % 2 === 0
+      bodyMat.color.setHex(hurtFlash ? HURT_COLOR : PLAYER_COLOR)
 
       camera.position.set(px, camOffsetY, pz + camOffsetZ)
       camera.lookAt(px, 0, pz)

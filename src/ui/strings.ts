@@ -8,6 +8,9 @@ export const strings = {
   skip: 'Pular',
   missionFailed: 'Missão falhada',
   timeUp: 'O tempo acabou',
+  died: 'Você morreu',
+  shield: 'Escudo',
+  health: 'Vida',
   reachedRound: (n: number) => `Rodada alcançada: ${n}`,
   totalKills: (n: number) => `Zumbis mortos: ${n}`,
   // Becomes "Voltar ao lobby" once the lobby exists.
