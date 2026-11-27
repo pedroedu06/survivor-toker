@@ -6,6 +6,7 @@ import { createGameRenderer } from './render/scene'
 import { startRound } from './systems/rounds'
 import { createHud } from './ui/hud'
 import { createInputSource } from './ui/input'
+import { createShopPanel } from './ui/shop'
 
 const canvas = document.querySelector<HTMLCanvasElement>('#game')
 const ui = document.querySelector<HTMLElement>('#ui')
@@ -20,6 +21,12 @@ const input = createInputSource(ui, renderer.screenToGround)
 const hud = createHud(ui, {
   onSkip: () => input.requestSkip(),
   onPlayAgain: () => resetWorld(world, newSeed()),
+  onOpenShop: () => shop.open(),
+  onUseItem: (id) => input.requestUse(id),
+})
+const shop = createShopPanel(ui, {
+  onBuy: (id) => input.requestBuy(id),
+  onUpgrade: (id) => input.requestUpgrade(id),
 })
 const debug = isDebugEnabled() ? createDebugOverlay(ui) : null
 const clock = createFixedClock()
@@ -39,6 +46,7 @@ const frame = (now: number) => {
 
   renderer.render(world, clock.alpha)
   hud.update(world, now)
+  shop.update(world)
   debug?.frame(now, world)
 
   requestAnimationFrame(frame)
@@ -57,12 +65,17 @@ if (debug) {
       for (let i = 0; i < n; i++) step(1 / 60)
       renderer.render(world, 1)
       hud.update(world, performance.now())
+      shop.update(world)
     },
     /** Jumps straight to round `n`, clearing the zombies alive. */
     startRound(n: number) {
       for (const e of world.enemies) e.active = false
       world.activeEnemies = 0
       startRound(world, n)
+    },
+    /** Gives in-run coins (to test the shop). */
+    addCoins(n: number) {
+      world.coins += n
     },
     /** God mode: the player takes no damage. */
     setGod(on: boolean) {

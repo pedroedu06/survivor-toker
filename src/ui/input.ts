@@ -16,6 +16,12 @@ export type InputSource = {
   poll(playerX: number, playerZ: number): void
   /** Queues a one-step "skip intermission" command (from the HUD button). */
   requestSkip(): void
+  /** Queues a one-step "buy this shop item" command. */
+  requestBuy(id: string): void
+  /** Queues a one-step "use this inventory item" command. */
+  requestUse(id: string): void
+  /** Queues a one-step "buy next weapon upgrade level" command. */
+  requestUpgrade(id: string): void
   /** Call after each simulation step so one-step commands are not repeated. */
   consumeCommands(): void
   dispose(): void
@@ -39,6 +45,9 @@ export function createInputSource(
   const ground = { x: 0, z: 0 }
 
   let skipRequested = false
+  let buyRequested = ''
+  let useRequested = ''
+  let upgradeRequested = ''
   let mouseActive = false
   let mouseX = 0
   let mouseY = 0
@@ -77,12 +86,30 @@ export function createInputSource(
       // Kept until a step consumes it, even if this frame runs no step.
       if (skipRequested) state.skipIntermission = true
       skipRequested = false
+      if (buyRequested) state.buyItem = buyRequested
+      if (useRequested) state.useItem = useRequested
+      buyRequested = ''
+      useRequested = ''
+      if (upgradeRequested) state.upgradeWeapon = upgradeRequested
+      upgradeRequested = ''
+    },
+    requestBuy(id) {
+      buyRequested = id
+    },
+    requestUpgrade(id) {
+      upgradeRequested = id
+    },
+    requestUse(id) {
+      useRequested = id
     },
     requestSkip() {
       skipRequested = true
     },
     consumeCommands() {
       state.skipIntermission = false
+      state.buyItem = ''
+      state.useItem = ''
+      state.upgradeWeapon = ''
     },
     dispose() {
       moveStick.dispose()

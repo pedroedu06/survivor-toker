@@ -39,3 +39,18 @@ describe('resetWorld', () => {
     expect(played.projectiles).toBe(pools[0] as typeof played.projectiles)
   })
 })
+
+describe('resetWorld economy', () => {
+  test('play again clears coins, inventory and potion effects', () => {
+    const world = createWorld()
+    world.coins = 500
+    world.inventory.healthPotion = 2
+    world.player.speedBoostTimer = 5
+    world.weaponLevels.pistol = { damage: 3 }
+    resetWorld(world)
+    expect(world.coins).toBe(0)
+    expect(world.inventory).toEqual({})
+    expect(world.player.speedBoostTimer).toBe(0)
+    expect(world.weaponLevels).toEqual({})
+  })
+})

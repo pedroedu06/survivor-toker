@@ -28,6 +28,7 @@ describe('stepWorld', () => {
     expect(a.projectiles).toEqual(b.projectiles)
     expect(a.enemies).toEqual(b.enemies)
     expect(a.kills).toBe(b.kills)
+    expect(a.coins).toBe(b.coins)
     expect(a.tick).toBe(b.tick)
   })
 

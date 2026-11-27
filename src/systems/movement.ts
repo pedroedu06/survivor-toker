@@ -24,7 +24,7 @@ export function updateMovement(world: World, input: InputState, dt: number): voi
     p.facingZ = input.aimZ / aimLen
   }
 
-  const speed = world.playerDef.speed
+  const speed = world.playerDef.speed * (p.speedBoostTimer > 0 ? p.speedBoostMultiplier : 1)
   const limit = world.arena.halfSize - world.playerDef.radius
   p.x = clamp(p.x + mx * speed * dt, -limit, limit)
   p.z = clamp(p.z + mz * speed * dt, -limit, limit)

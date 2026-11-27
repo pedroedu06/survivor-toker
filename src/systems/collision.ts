@@ -1,4 +1,5 @@
 import type { World } from '../core/world'
+import { effectiveDamage } from './weaponStats'
 
 /** Projectile vs zombie. Expects `world.enemyHash` to be up to date. No pierce yet. */
 export function updateCollision(world: World): void {
@@ -7,6 +8,7 @@ export function updateCollision(world: World): void {
   const hitDist = world.enemyDef.radius + world.weapon.projectileSize * 0.5
   const hitDistSq = hitDist * hitDist
   const buf = world.queryBuffer
+  const damage = effectiveDamage(world)
 
   for (let i = 0; i < projectiles.length; i++) {
     const pr = projectiles[i]
@@ -22,7 +24,7 @@ export function updateCollision(world: World): void {
 
       pr.active = false
       world.activeProjectiles--
-      e.hp -= world.weapon.damage
+      e.hp -= damage
       if (e.hp <= 0) {
         e.active = false
         world.activeEnemies--

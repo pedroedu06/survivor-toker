@@ -73,15 +73,20 @@ src/
 
 ### Shop
 
-- [decided] The shop is **in-run**, used between waves. Planned right after player health.
-- [decided] Paid with **in-run coins** ("moedinhas"): earned by winning waves and other actions (e.g. kills; details to come). They only exist inside the run.
-- [decided] What it sells:
-  - **weapon upgrades** (damage, fire rate, etc.);
-  - **potions** that help in the waves (e.g. heal, temporary buffs);
-  - the **shield** (refill and/or more max shield);
-  - **training ("estudo") for the character** (character upgrades, valid for the run, so it does not break "meta-progression is unlocks only").
-- [open] Coin values (per wave, per kill), the currency's name (so it is not confused with the lobby's meta "coins"), and whether it replaces the "points" spent on the Mystery Box.
-- [open] Exact list of upgrades, potions and training, prices, and how it combines with cards and the Mystery Box.
+- [decided] The shop is **in-run**: a **"Shop" button in every intermission** opens it. It does not pause the intermission timer.
+- [decided] Paid with **in-run coins** ("moedas" in the UI), shown with a coin icon in the HUD. They only exist inside the run.
+- [decided] Coins are paid **when a round is cleared**, based on **how many zombies were killed** and **which round** it is: little early on, much more in high rounds.
+- [provisional] Formula (`data/economy.ts`): kills in the round × `round(3 * (1 + 0.1 * (round - 1)))`. Round 1 ≈ 24, round 10 ≈ 156, round 100 ≈ 6800.
+- [decided] Catalog (`data/shop.ts`):
+  - **Shield**: refills the shield right away.
+  - **Health potion** and **speed potion**: stored in the inventory (max 3 each) and used **during a wave** with on-screen buttons (in the intermission HP already regenerates).
+  - **Melee weapons** (katana, knife, axe), **turrets** and **walls** (protect/improve your base): listed as "coming soon" until the Blender models exist; their behavior is not implemented yet.
+  - **Damage potion**: stored like the others, used during a wave.
+- [provisional] Prices/effects: shield 20 (full refill), health potion 15 (+50 HP), speed potion 15 (+40% speed for 10 s), damage potion 20 (+50% damage for 10 s).
+- [decided] The shop has two tabs: **Items** and **Weapon**. The Weapon tab sells upgrades for the **equipped weapon** (today the pistol; later also the one picked up from the Mystery Box). Upgrades are tracked **per weapon**: a new weapon starts at level 0.
+- [provisional] Upgrades (`data/upgrades.ts`): damage +25% per level and fire rate +15% per level, max level 5, price 30 x 1.6^level (30, 48, 77, 123, 197). They stack with the damage potion.
+- [idea] Later: **training ("estudo") for the character** (valid for the run, so it does not break "meta-progression is unlocks only"); more weapon upgrades (pierce, range, projectile speed).
+- [open] Whether in-run coins replace the "points" spent on the Mystery Box; how the shop combines with cards.
 
 ### Mystery Box (in-run)
 
@@ -226,7 +231,7 @@ When reporting a problem: say what was expected, what happened, and use "copy ru
 - Chances per offer vs per slot (assumed: per offer).
 - Screen orientation: portrait vs landscape (today it follows the phone rotation).
 - Aim mode in settings: manual vs aim lock as the default; manual fire button or not.
-- Shop: in-run coin values and name, item list and prices (see "Shop").
+- Shop: melee/turret/wall behavior, weapon upgrades and training (see "Shop").
 
 ## Planned phases
 

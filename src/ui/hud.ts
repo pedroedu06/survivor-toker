@@ -1,5 +1,10 @@
 import type { World } from '../core/world'
+import { button, coinIcon, el, setText } from './dom'
+import { itemIcons } from './icons'
 import { strings } from './strings'
+
+/** Inventory items with a quick-use button during a round. */
+const POTIONS = ['healthPotion', 'speedPotion', 'damagePotion'] as const
 
 /** How long the "Round N" banner stays on screen, in ms. */
 const BANNER_MS = 2000
@@ -7,6 +12,8 @@ const BANNER_MS = 2000
 export type HudCallbacks = {
   onSkip(): void
   onPlayAgain(): void
+  onOpenShop(): void
+  onUseItem(id: string): void
 }
 
 export type Hud = {
@@ -22,17 +29,6 @@ export function formatTime(seconds: number): string {
   return `${m}:${s < 10 ? '0' : ''}${s}`
 }
 
-function el<K extends keyof HTMLElementTagNameMap>(
-  tag: K,
-  className: string,
-  parent: HTMLElement,
-): HTMLElementTagNameMap[K] {
-  const node = document.createElement(tag)
-  node.className = className
-  parent.appendChild(node)
-  return node
-}
-
 export function createHud(parent: HTMLElement, callbacks: HudCallbacks): Hud {
   const root = el('div', 'hud', parent)
 
@@ -45,15 +41,35 @@ export function createHud(parent: HTMLElement, callbacks: HudCallbacks): Hud {
   const shieldBar = createBar(bars, 'hud-bar--shield', strings.shield)
   const healthBar = createBar(bars, 'hud-bar--health', strings.health)
 
+  const coins = el('div', 'hud-coins', root)
+  coinIcon(coins)
+  const coinsValue = el('span', 'hud-coins-value', coins)
+
   const banner = el('div', 'hud-banner', root)
 
   const intermission = el('div', 'hud-intermission', root)
   const clearedLabel = el('div', 'hud-cleared', intermission)
+  const rewardRow = el('div', 'hud-reward', intermission)
+  coinIcon(rewardRow)
+  const rewardLabel = el('span', '', rewardRow)
   const nextLabel = el('div', 'hud-next', intermission)
-  const skipButton = el('button', 'hud-button', intermission)
-  skipButton.type = 'button'
-  skipButton.textContent = strings.skip
-  skipButton.addEventListener('click', () => callbacks.onSkip())
+  const intermissionButtons = el('div', 'hud-row', intermission)
+  button('hud-button hud-button--shop', intermissionButtons, strings.shop, () =>
+    callbacks.onOpenShop(),
+  )
+  button('hud-button hud-button--ghost', intermissionButtons, strings.skip, () =>
+    callbacks.onSkip(),
+  )
+
+  // Quick-use potion buttons during a round (right side, above the aim stick area).
+  const potions = el('div', 'hud-potions', root)
+  const potionButtons = POTIONS.map((id) => {
+    const b = button('hud-potion', potions, '', () => callbacks.onUseItem(id))
+    el('span', 'hud-potion-icon', b).textContent = itemIcons[id] ?? '?'
+    const count = el('span', 'hud-potion-count', b)
+    b.hidden = true
+    return { id, button: b, count, shown: -1 }
+  })
 
   const failed = el('div', 'hud-failed', root)
   const failedCard = el('div', 'hud-card', failed)
@@ -61,10 +77,9 @@ export function createHud(parent: HTMLElement, callbacks: HudCallbacks): Hud {
   const reasonLabel = el('p', 'hud-failed-reason', failedCard)
   const reachedLabel = el('p', 'hud-stat', failedCard)
   const killsLabel = el('p', 'hud-stat', failedCard)
-  const playAgainButton = el('button', 'hud-button hud-button--primary', failedCard)
-  playAgainButton.type = 'button'
-  playAgainButton.textContent = strings.playAgain
-  playAgainButton.addEventListener('click', () => callbacks.onPlayAgain())
+  button('hud-button hud-button--primary', failedCard, strings.playAgain, () =>
+    callbacks.onPlayAgain(),
+  )
 
   // Last shown values: the DOM is only written when one changes.
   let shownSeed = Number.NaN
@@ -73,11 +88,8 @@ export function createHud(parent: HTMLElement, callbacks: HudCallbacks): Hud {
   let shownRound = -1
   let shownTimer = ''
   let shownZombies = -1
+  let shownCoins = -1
   let bannerUntil = 0
-
-  const setText = (node: HTMLElement, text: string) => {
-    if (node.textContent !== text) node.textContent = text
-  }
 
   return {
     update(world, now) {
@@ -106,7 +118,10 @@ export function createHud(parent: HTMLElement, callbacks: HudCallbacks): Hud {
       if (r.phase !== shownPhase) {
         shownPhase = r.phase
         root.dataset.phase = r.phase
-        if (r.phase === 'intermission') setText(clearedLabel, strings.roundCleared(r.number))
+        if (r.phase === 'intermission') {
+          setText(clearedLabel, strings.roundCleared(r.number))
+          setText(rewardLabel, strings.coinsReward(r.lastReward))
+        }
         if (r.phase === 'failed') {
           setText(reasonLabel, r.failReason === 'died' ? strings.died : strings.timeUp)
           setText(reachedLabel, strings.reachedRound(r.number))
@@ -130,6 +145,19 @@ export function createHud(parent: HTMLElement, callbacks: HudCallbacks): Hud {
       const p = world.player
       shieldBar.set(p.shield, world.playerDef.maxShield)
       healthBar.set(p.hp, world.playerDef.maxHp)
+
+      if (world.coins !== shownCoins) {
+        shownCoins = world.coins
+        setText(coinsValue, String(world.coins))
+      }
+
+      for (const potion of potionButtons) {
+        const n = r.phase === 'active' ? (world.inventory[potion.id] ?? 0) : 0
+        if (n === potion.shown) continue
+        potion.shown = n
+        potion.button.hidden = n <= 0
+        setText(potion.count, String(n))
+      }
     },
   }
 }

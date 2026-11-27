@@ -1,4 +1,5 @@
 import { type ArenaDef, arena as defaultArena } from '../data/arena'
+import { economy as defaultEconomy, type EconomyDef } from '../data/economy'
 import { type EnemyDef, walker } from '../data/enemies'
 import { player as defaultPlayer, type PlayerDef } from '../data/player'
 import { rounds as defaultRounds, type RoundsDef } from '../data/rounds'
@@ -28,6 +29,12 @@ export type Player = {
   hurtTimer: number
   /** Seconds since the last hit (HP regen starts after `regenDelay`). */
   sinceHurt: number
+  /** Speed potion: seconds left and the multiplier while it lasts. */
+  speedBoostTimer: number
+  speedBoostMultiplier: number
+  /** Damage potion: seconds left and the multiplier while it lasts. */
+  damageBoostTimer: number
+  damageBoostMultiplier: number
 }
 
 export type Projectile = {
@@ -69,6 +76,8 @@ export type RoundState = {
   spawnInterval: number
   /** Why the run ended, when phase is 'failed'. */
   failReason: FailReason | null
+  /** Coins paid for the last cleared round (shown in the intermission). */
+  lastReward: number
 }
 
 export type FailReason = 'timeUp' | 'died'
@@ -99,6 +108,13 @@ export type World = {
   queryBuffer: Int32Array
   /** Debug only (god mode): the player takes no damage. */
   debugGod: boolean
+  economyDef: EconomyDef
+  /** In-run coins (shop currency). */
+  coins: number
+  /** Carried shop items (potions), by item id. */
+  inventory: Record<string, number>
+  /** Weapon upgrade levels bought in the shop: weaponId -> upgradeId -> level. */
+  weaponLevels: Record<string, Record<string, number>>
 }
 
 export type WorldOptions = {
@@ -109,6 +125,7 @@ export type WorldOptions = {
   enemyDef?: EnemyDef
   spawnDef?: SpawnDef
   roundsDef?: RoundsDef
+  economyDef?: EconomyDef
 }
 
 function initialRound(): RoundState {
@@ -122,6 +139,7 @@ function initialRound(): RoundState {
     enemyHp: 0,
     spawnInterval: 0,
     failReason: null,
+    lastReward: 0,
   }
 }
 
@@ -138,6 +156,10 @@ function initialPlayer(def: PlayerDef): Player {
     shield: def.maxShield,
     hurtTimer: 0,
     sinceHurt: 0,
+    speedBoostTimer: 0,
+    speedBoostMultiplier: 1,
+    damageBoostTimer: 0,
+    damageBoostMultiplier: 1,
   }
 }
 
@@ -164,6 +186,9 @@ export function resetWorld(world: World, seed: number = world.seed): void {
   world.kills = 0
   world.spawnTimer = 0
   world.enemyHash.clear()
+  world.coins = 0
+  world.inventory = {}
+  world.weaponLevels = {}
 }
 
 export function createWorld(options: WorldOptions = {}): World {
@@ -200,5 +225,9 @@ export function createWorld(options: WorldOptions = {}): World {
     enemyHash: createSpatialHash(arena.halfSize, HASH_CELL_SIZE, arena.maxEnemies),
     queryBuffer: new Int32Array(arena.maxEnemies),
     debugGod: false,
+    economyDef: options.economyDef ?? defaultEconomy,
+    coins: 0,
+    inventory: {},
+    weaponLevels: {},
   }
 }

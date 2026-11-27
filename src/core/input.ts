@@ -15,8 +15,23 @@ export type InputState = {
   aimZ: number
   /** One-step command: skip the current intermission. */
   skipIntermission: boolean
+  /** One-step command: buy this shop item id ('' = nothing). */
+  buyItem: string
+  /** One-step command: use this inventory item id ('' = nothing). */
+  useItem: string
+  /** One-step command: buy the next level of this weapon upgrade id ('' = nothing). */
+  upgradeWeapon: string
 }
 
 export function createInputState(): InputState {
-  return { moveX: 0, moveZ: 0, aimX: 0, aimZ: 0, skipIntermission: false }
+  return {
+    moveX: 0,
+    moveZ: 0,
+    aimX: 0,
+    aimZ: 0,
+    skipIntermission: false,
+    buyItem: '',
+    useItem: '',
+    upgradeWeapon: '',
+  }
 }

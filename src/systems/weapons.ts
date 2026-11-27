@@ -1,4 +1,5 @@
 import type { World } from '../core/world'
+import { effectiveFireRate } from './weaponStats'
 
 /** Auto-fire: shoots in the facing direction whenever the cooldown is ready. */
 export function updateWeapons(world: World, dt: number): void {
@@ -8,7 +9,7 @@ export function updateWeapons(world: World, dt: number): void {
   if (p.fireCooldown > 0) return
 
   // Keep the remainder so the fire rate does not drift with the step size.
-  p.fireCooldown += 1 / w.fireRate
+  p.fireCooldown += 1 / effectiveFireRate(world)
   if (p.fireCooldown < 0) p.fireCooldown = 0
 
   const slot = findFreeProjectile(world)

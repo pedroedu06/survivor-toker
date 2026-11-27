@@ -1,5 +1,6 @@
 import type { InputState } from '../core/input'
 import type { World } from '../core/world'
+import { payRoundReward } from './economy'
 
 /** Starts round `n`: computes how many zombies, how strong and how fast they spawn. */
 export function startRound(world: World, n: number): void {
@@ -30,6 +31,7 @@ export function updateRounds(world: World, input: InputState, dt: number): void 
   switch (r.phase) {
     case 'active':
       if (r.killed >= r.total) {
+        payRoundReward(world)
         r.phase = 'intermission'
         r.timer = world.roundsDef.intermission
         return

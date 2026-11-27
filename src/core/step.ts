@@ -4,6 +4,7 @@ import { updateEnemies } from '../systems/enemies'
 import { updateMovement } from '../systems/movement'
 import { updateProjectiles } from '../systems/projectiles'
 import { updateRounds } from '../systems/rounds'
+import { updateShop } from '../systems/shop'
 import { updateSpawn } from '../systems/spawn'
 import { updateWeapons } from '../systems/weapons'
 import type { InputState } from './input'
@@ -21,6 +22,7 @@ export function stepWorld(world: World, input: InputState, dt: number): void {
   p.prevX = p.x
   p.prevZ = p.z
 
+  updateShop(world, input, dt) // buy/use commands + timed potion effects
   updateMovement(world, input, dt)
   updateEnemies(world, dt) // also rebuilds the enemy spatial hash
   updatePlayerDamage(world, dt)
