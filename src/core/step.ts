@@ -1,5 +1,6 @@
 import { updateCollision } from '../systems/collision'
 import { updatePlayerDamage } from '../systems/damage'
+import { applyDevCommands } from '../systems/dev'
 import { updateEnemies } from '../systems/enemies'
 import { updateMovement } from '../systems/movement'
 import { updateProjectiles } from '../systems/projectiles'
@@ -17,6 +18,8 @@ const isFailed = (world: World) => world.round.phase === 'failed'
 export function stepWorld(world: World, input: InputState, dt: number): void {
   // Mission failed: everything freezes until the run is reset.
   if (isFailed(world)) return
+
+  applyDevCommands(world, input.dev)
 
   const p = world.player
   p.prevX = p.x

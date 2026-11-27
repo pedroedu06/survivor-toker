@@ -18,6 +18,9 @@ Status: **[decided]** final · **[provisional]** guess until tested · **[idea]*
 - [provisional] Simple shadows (blob/disc under the character, no shadow maps), few textures (color palette), `InstancedMesh` for hordes, simple animation (bob/squash) before skeletal animation.
 - [provisional] Character size: height ~1.0-1.15, width ~0.85-1.0 (chunky, readable from above), collision radius ~0.45 (matches the visual width). Common zombies the same size or slightly smaller; special ones bigger (1.3-2.0) to be recognizable from afar.
 - [decided] Blender models: 1 unit = 1 m, origin at the feet (center of the base), facing forward (+Z in Three.js after glTF export).
+- [decided] **Base character template: "Trooper"** (`art/characters/trooper_base.blend` / `.glb`, previews in `art/previews/`). Every character, skin and enemy (zombies included) is built from this mold: big round egg head (~0.6 wide), small pear body, short tube arms and legs, round mitten hands, rounded boots, flat saturated colors. Face: oval black eyes with a highlight, slanted brows, thin arc mouth ("angry smile" for the soldier). Features are placed on the head surface (never sunk in). ~1.0 m tall, origin at the feet, facing -Y in Blender (+Z in Three.js). The current model is ~16.6k tris: decimate to ~5-6k before rigging/shipping.
+- [decided] Weapons are separate models, **slightly more realistic** than the characters (still chunky and readable), origin at the grip, barrel forward, attached to a hand socket so a new weapon needs no new animation.
+- [decided] Keep animation **simple** (standard rig with few bones; idle/walk/aim/hit/death, bob and squash). Rich cartoon animation is out of scope until there is a dedicated artist.
 - [decided] Start with **placeholders** (colored capsules and cubes). Swap in real models later: CC0 packs (Kenney, Quaternius) or custom Blender models.
 - Biggest project risk: 3D art and animation cost. Real models only come in once the game loop is already fun with placeholders.
 
@@ -53,6 +56,8 @@ src/
 ## Gameplay
 
 - [decided] Virtual joystick on the left (WASD/arrows on PC). Auto-shoot with no fire button (important in later rounds).
+- [decided] **Landscape on phones.** The Android app is locked to landscape (`sensorLandscape`); in a mobile browser the game asks to rotate and pauses while upright.
+- [decided] PC shortcuts (`ui/hotkeys.ts`): **H** shop, **F** skip intermission, **1/2/3** potions (health, speed, damage), **Esc/P** pause. Key hints show on the buttons only on devices with a mouse.
 - [provisional] Manual aim, twin-stick, for testing: right virtual joystick aims on mobile, mouse aims on PC. Fire stays automatic (no button) toward the aim; releasing the right stick keeps the last aim. Movement does not change the aim. (Replaces "shoot where you move", which made fleeing shoot away from the horde and felt too hard.)
 - [decided] Each weapon has a `targeting`; cards can improve/change it.
 - [idea] Settings option to choose the aim mode: manual (twin-stick/mouse) or aim lock (`nearest`: auto-aim at the closest zombie). Also possibly automatic vs manual fire (fire button). Details open.
@@ -85,6 +90,7 @@ src/
 - [provisional] Prices/effects: shield 20 (full refill), health potion 15 (+50 HP), speed potion 15 (+40% speed for 10 s), damage potion 20 (+50% damage for 10 s).
 - [decided] The shop has two tabs: **Items** and **Weapon**. The Weapon tab sells upgrades for the **equipped weapon** (today the pistol; later also the one picked up from the Mystery Box). Upgrades are tracked **per weapon**: a new weapon starts at level 0.
 - [provisional] Upgrades (`data/upgrades.ts`): damage +25% per level and fire rate +15% per level, max level 5, price 30 x 1.6^level (30, 48, 77, 123, 197). They stack with the damage potion.
+- [idea] Aimed consumables for the shop: a **missile** you point at a spot to wipe out a horde, a **bomb** you aim and throw, etc. Bought in the intermission, used during the wave (like potions), with an aim/target gesture. Details open (area, damage, price, how to aim on mobile).
 - [idea] Later: **training ("estudo") for the character** (valid for the run, so it does not break "meta-progression is unlocks only"); more weapon upgrades (pierce, range, projectile speed).
 - [open] Whether in-run coins replace the "points" spent on the Mystery Box; how the shop combines with cards.
 
@@ -207,9 +213,13 @@ const hp = baseHp * enemyGrowth ** round
 
 ## Testing and debug tools (part of the game from the start)
 
-- [decided] `?debug=1` (or a dev build) turns on an overlay with FPS, entity count, round, stats and current build.
-- [decided] Dev panel with: jump to round N, give card X at tier Y, give weapon, spawn zombie, god mode, game speed (0.5x / 2x / 5x), a bot that plays by itself.
-- [decided] "Copy run" button: copies seed + input log + round + build to the clipboard. Pasting this in a chat reproduces the exact bug.
+- [decided] `?debug=1` turns on an overlay: FPS (avg/min), sim and render ms, draw calls, triangles, entities, round, HP/shield/coins.
+- [decided] **Dev panel** (`?debug=1`, "DEV" button): jump to round N, kill all, spawn zombies, god mode, heal, coins, potions, game speed (0.5x/1x/2x/5x), bot that plays by itself, performance test, copy/paste run. Later: give card X at tier Y, give weapon.
+- [decided] **Everything that changes the game goes through the input** (`InputState`), dev commands included (`systems/dev.ts`). So the input log is the whole run and replays are exact.
+- [decided] **"Copy run"** (pause menu for everyone, dev panel in debug): copies a short summary + seed + input log (only changes, quantized) + build + checksum + invariant problems + recent JS errors. Pasting it in a chat reproduces the run: `bun run replay run.txt` (headless) or "Paste run" in the dev panel (in the browser).
+- [decided] **Bug hunting:** invariants (`core/invariants.ts`) checked every 30 ticks in debug (red toast + included in the run), JS error capture, and a headless soak test (`bun run soak`: bot + random commands, invariants every step, failing runs saved to `runs/`).
+- [decided] **Performance test** (dev panel): god + bot + a 120-zombie horde for 30 s, reports avg/min/1%-low FPS, sim/render ms and draw calls. Target: 60 fps with ~100 zombies on a mid-range phone.
+- [decided] **Pause**: ⏸ button, Esc/P on PC, automatic when the app goes to the background. Menu: continue, restart, copy run.
 
 ## How to test
 
@@ -219,7 +229,7 @@ const hp = baseHp * enemyGrowth ** round
 
 After changing code: `bun run build` and `bunx cap sync android`.
 
-When reporting a problem: say what was expected, what happened, and use "copy run".
+When reporting a problem: say what was expected, what happened, and use "copy run" (pause menu). Long runs give a long text (tens to hundreds of KB): saving it to a file and sharing the file also works.
 
 ## Open decisions
 
@@ -229,7 +239,7 @@ When reporting a problem: say what was expected, what happened, and use "copy ru
 - Enemy curve after round ~100.
 - In-run rarity in Rush.
 - Chances per offer vs per slot (assumed: per offer).
-- Screen orientation: portrait vs landscape (today it follows the phone rotation).
+
 - Aim mode in settings: manual vs aim lock as the default; manual fire button or not.
 - Shop: melee/turret/wall behavior, weapon upgrades and training (see "Shop").
 

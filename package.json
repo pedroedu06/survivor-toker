@@ -12,7 +12,9 @@
     "lint": "biome check .",
     "format": "biome check --write .",
     "cap:sync": "bun run build && cap sync android",
-    "android": "bun run cap:sync && cap run android"
+    "android": "bun run cap:sync && cap run android",
+    "replay": "bun scripts/replay.ts",
+    "soak": "bun scripts/soak.ts"
   },
   "dependencies": {
     "@capacitor/android": "^8.6.3",

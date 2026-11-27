@@ -42,6 +42,8 @@ export type GameRenderer = {
   /** Projects a screen point (CSS px) onto the plane where projectiles fly. */
   screenToGround(clientX: number, clientY: number, out: { x: number; z: number }): boolean
   resize(): void
+  /** Draw calls and triangles of the last rendered frame. */
+  stats(out: { drawCalls: number; triangles: number }): void
   dispose(): void
 }
 
@@ -228,6 +230,10 @@ export function createGameRenderer(canvas: HTMLCanvasElement, world: World): Gam
       return true
     },
     resize,
+    stats(out) {
+      out.drawCalls = renderer.info.render.calls
+      out.triangles = renderer.info.render.triangles
+    },
     dispose() {
       renderer.dispose()
     },

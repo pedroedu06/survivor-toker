@@ -54,3 +54,12 @@ describe('resetWorld economy', () => {
     expect(world.weaponLevels).toEqual({})
   })
 })
+
+describe('resetWorld dev state', () => {
+  test('god mode does not leak into the next run (replays start clean)', () => {
+    const world = createWorld()
+    world.debugGod = true
+    resetWorld(world)
+    expect(world.debugGod).toBe(false)
+  })
+})

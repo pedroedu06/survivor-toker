@@ -23,9 +23,17 @@ bun run typecheck    # TypeScript check
 bun run lint         # Biome lint + format check
 bun run format       # Biome auto-fix
 bun run build        # production build into dist/
+bun run soak 10 5    # bot plays 10 seeds x 5 min, invariants checked every step
+bun run replay runs/x.txt   # replays a copied run headless
 ```
 
-Debug overlay: open the game with `?debug=1`.
+## Testing tools
+
+- **`?debug=1`**: overlay (FPS, sim/render ms, draw calls, entities) and the **DEV** panel: jump to a round, kill/spawn zombies, god mode, coins, potions, game speed, bot, performance test, copy/paste run.
+- **Pause** (⏸, Esc or P): continue, restart, **Copy run**.
+- **Reporting a bug:** pause → _Copy run_ → paste the text in the chat (or save it to a file). It contains the seed and every input, so the exact run can be replayed with `bun run replay` or _Paste run_ in the dev panel.
+- **Performance:** DEV → _Teste de desempenho_ (30 s with a 120-zombie horde). Target: 60 fps on a mid-range phone.
+- Console (debug): `__game.dev('coins:500;god:1')`, `__game.startRound(10)`, `__game.setBot(true)`, `__game.setSpeed(5)`, `__game.advance(600)`, `__game.checkInvariants()`.
 
 ## Android
 

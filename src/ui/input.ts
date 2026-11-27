@@ -1,4 +1,5 @@
 import { createInputState, type InputState } from '../core/input'
+import { quantizeInput } from '../core/inputLog'
 import { createJoystick } from './joystick'
 import { createKeyboard } from './keyboard'
 
@@ -22,6 +23,8 @@ export type InputSource = {
   requestUse(id: string): void
   /** Queues a one-step "buy next weapon upgrade level" command. */
   requestUpgrade(id: string): void
+  /** Queues dev command(s) (see systems/dev.ts). They go through the sim, so replays match. */
+  requestDev(cmd: string): void
   /** Call after each simulation step so one-step commands are not repeated. */
   consumeCommands(): void
   dispose(): void
@@ -48,6 +51,7 @@ export function createInputSource(
   let buyRequested = ''
   let useRequested = ''
   let upgradeRequested = ''
+  let devRequested = ''
   let mouseActive = false
   let mouseX = 0
   let mouseY = 0
@@ -92,6 +96,14 @@ export function createInputSource(
       useRequested = ''
       if (upgradeRequested) state.upgradeWeapon = upgradeRequested
       upgradeRequested = ''
+      if (devRequested) state.dev = state.dev ? `${state.dev};${devRequested}` : devRequested
+      devRequested = ''
+
+      // Round BEFORE the simulation sees it, so the recorded run replays exactly.
+      quantizeInput(state)
+    },
+    requestDev(cmd) {
+      devRequested = devRequested ? `${devRequested};${cmd}` : cmd
     },
     requestBuy(id) {
       buyRequested = id
@@ -110,6 +122,7 @@ export function createInputSource(
       state.buyItem = ''
       state.useItem = ''
       state.upgradeWeapon = ''
+      state.dev = ''
     },
     dispose() {
       moveStick.dispose()

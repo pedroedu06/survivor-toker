@@ -1,10 +1,11 @@
 import type { World } from '../core/world'
 import { button, coinIcon, el, setText } from './dom'
+import { HOTKEY_LABELS } from './hotkeys'
 import { itemIcons } from './icons'
 import { strings } from './strings'
 
-/** Inventory items with a quick-use button during a round. */
-const POTIONS = ['healthPotion', 'speedPotion', 'damagePotion'] as const
+/** Inventory items with a quick-use button during a round (keys 1, 2, 3 on PC). */
+export const POTIONS = ['healthPotion', 'speedPotion', 'damagePotion'] as const
 
 /** How long the "Round N" banner stays on screen, in ms. */
 const BANNER_MS = 2000
@@ -56,15 +57,16 @@ export function createHud(parent: HTMLElement, callbacks: HudCallbacks): Hud {
   const intermissionButtons = el('div', 'hud-row', intermission)
   button('hud-button hud-button--shop', intermissionButtons, strings.shop, () =>
     callbacks.onOpenShop(),
-  )
+  ).dataset.key = HOTKEY_LABELS.shop
   button('hud-button hud-button--ghost', intermissionButtons, strings.skip, () =>
     callbacks.onSkip(),
-  )
+  ).dataset.key = HOTKEY_LABELS.skip
 
   // Quick-use potion buttons during a round (right side, above the aim stick area).
   const potions = el('div', 'hud-potions', root)
-  const potionButtons = POTIONS.map((id) => {
+  const potionButtons = POTIONS.map((id, i) => {
     const b = button('hud-potion', potions, '', () => callbacks.onUseItem(id))
+    b.dataset.key = HOTKEY_LABELS.potions[i] ?? ''
     el('span', 'hud-potion-icon', b).textContent = itemIcons[id] ?? '?'
     const count = el('span', 'hud-potion-count', b)
     b.hidden = true

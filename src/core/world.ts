@@ -189,6 +189,8 @@ export function resetWorld(world: World, seed: number = world.seed): void {
   world.coins = 0
   world.inventory = {}
   world.weaponLevels = {}
+  // Dev state too: a new run must replay from its own log alone.
+  world.debugGod = false
 }
 
 export function createWorld(options: WorldOptions = {}): World {

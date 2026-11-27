@@ -6,7 +6,7 @@ The full memory of ideas and decisions is in `DESIGN.md`. Before implementing an
 
 ## Current phase
 
-**Milestone 1** (see "Planned phases" in `DESIGN.md`), with **phase 2 (rounds)** brought forward at the user's request. Still pending from Milestone 1: player health/damage, death and restart, dev panel. Update this line when the phase changes.
+**Milestone 1** (see "Planned phases" in `DESIGN.md`), with **phase 2 (rounds)** and a first **shop** brought forward at the user's request. Milestone 1 tools are in (dev panel, copy run/replay, soak, perf test, pause). Still pending to close Milestone 1: the performance result on a real mid-range phone (60 fps with ~100 zombies). Update this line when the phase changes.
 
 ## Stack and commands
 
@@ -14,6 +14,14 @@ The full memory of ideas and decisions is in `DESIGN.md`. Before implementing an
 - Always `bun`, `bun add`, `bunx`. Never npm.
 - Code identifiers and files in English. The user chats in Portuguese: reply in Portuguese in chat, but keep files and code in English.
 - `bun test` for tests. Run typecheck before calling a phase done.
+- `bun run soak [seeds] [minutes]`: bot + random commands with invariants every step. Run it after changing gameplay systems.
+- A run pasted by the user ("SURVIVOR-RUN v1 ..."): save it to `runs/<name>.txt` and run `bun run replay runs/<name>.txt` to reproduce it headless (final state, checksum, first invariant failure).
+
+## Determinism (needed for replays)
+
+- Anything that changes the game goes through `InputState` (including dev/cheat commands, `systems/dev.ts`). Never mutate the world from the UI.
+- Inputs are quantized (`quantizeInput`) before the simulation sees them; the recorder logs what was simulated.
+- New world state must be reset in `resetWorld` (otherwise "play again" leaks state and replays diverge).
 
 ## Rules
 

@@ -39,6 +39,16 @@ export const strings = {
     turret: { name: 'Torreta', desc: 'Atira sozinha nos zumbis' },
     wall: { name: 'Parede', desc: 'Protege a sua base' },
   } as Record<string, { name: string; desc: string }>,
+  pause: 'Pausar',
+  paused: 'Pausado',
+  resume: 'Continuar',
+  restart: 'Recomeçar',
+  copyRun: 'Copiar run',
+  copyRunHint: 'Achou um bug? Toque em "Copiar run" e cole no chat.',
+  runCopied: 'Run copiada! Cole no chat.',
+  runCopyManual: 'Selecione todo o texto abaixo e copie',
+  bugDetected: 'Bug detectado',
+  rotatePhone: 'Gire o celular para jogar deitado',
   // Becomes "Voltar ao lobby" once the lobby exists.
   playAgain: 'Jogar de novo',
 }

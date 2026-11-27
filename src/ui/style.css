@@ -39,7 +39,7 @@ body {
 
 .debug-overlay {
   position: absolute;
-  top: calc(env(safe-area-inset-top) + 96px);
+  top: calc(env(safe-area-inset-top) + 110px);
   left: calc(env(safe-area-inset-left) + 8px);
   padding: 4px 8px;
   border-radius: 4px;
@@ -607,4 +607,335 @@ body {
 .shop[data-tab="items"] .shop-weapon,
 .shop[data-tab="weapon"] > .shop-panel > .shop-grid {
   display: none;
+}
+
+/* ---------- Pause ---------- */
+.hud-pause-button {
+  position: absolute;
+  top: calc(env(safe-area-inset-top) + 8px);
+  left: calc(env(safe-area-inset-left) + 8px);
+  z-index: 4;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 10px;
+  background: rgb(0 0 0 / 45%);
+  color: #fff;
+  font-size: 18px;
+  pointer-events: auto;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.pause {
+  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  align-items: center;
+  justify-content: center;
+  background: rgb(10 12 18 / 70%);
+  pointer-events: auto;
+  color: #fff;
+}
+
+.pause.open {
+  display: flex;
+}
+
+.pause-title {
+  margin: 0 0 16px;
+  font-size: 30px;
+}
+
+.pause-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pause-hint {
+  margin: 14px 0 0;
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+/* ---------- Text modal (copy / paste run, perf result) ---------- */
+.modal {
+  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgb(10 12 18 / 75%);
+  pointer-events: auto;
+  color: #fff;
+}
+
+.modal.open {
+  display: flex;
+}
+
+.modal-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(560px, 100%);
+  padding: 16px;
+  border-radius: 16px;
+  background: #262b38;
+}
+
+.modal-title {
+  margin: 0;
+  font-size: 20px;
+}
+
+.modal-hint {
+  margin: 0;
+  font-size: 13px;
+  opacity: 0.75;
+}
+
+.modal-text {
+  width: 100%;
+  height: 180px;
+  padding: 8px;
+  border: 0;
+  border-radius: 8px;
+  background: #11141b;
+  color: #cfe;
+  font:
+    11px / 1.4 ui-monospace,
+    monospace;
+  resize: vertical;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.modal-row {
+  justify-content: flex-end;
+}
+
+/* ---------- Bug toast ---------- */
+.bug-toast {
+  display: none;
+  position: absolute;
+  left: 50%;
+  bottom: calc(env(safe-area-inset-bottom) + 150px);
+  transform: translateX(-50%);
+  z-index: 7;
+  flex-direction: column;
+  gap: 6px;
+  width: min(360px, 92vw);
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #b3261e;
+  color: #fff;
+  pointer-events: auto;
+}
+
+.bug-toast.open {
+  display: flex;
+}
+
+.bug-toast-text {
+  font:
+    12px / 1.35 ui-monospace,
+    monospace;
+  word-break: break-word;
+}
+
+/* ---------- Dev panel ---------- */
+.dev-toggle {
+  position: absolute;
+  top: calc(env(safe-area-inset-top) + 8px);
+  left: calc(env(safe-area-inset-left) + 54px);
+  z-index: 9;
+  height: 40px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 10px;
+  background: #7b2cbf;
+  color: #fff;
+  font:
+    800 13px / 1 ui-monospace,
+    monospace;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.dev-panel {
+  display: none;
+  position: absolute;
+  top: calc(env(safe-area-inset-top) + 54px);
+  left: calc(env(safe-area-inset-left) + 8px);
+  z-index: 9;
+  flex-direction: column;
+  gap: 8px;
+  width: min(320px, 92vw);
+  max-height: calc(100% - 70px);
+  overflow-y: auto;
+  padding: 10px;
+  border-radius: 12px;
+  background: rgb(20 16 32 / 92%);
+  color: #fff;
+  pointer-events: auto;
+  font:
+    12px / 1.3 system-ui,
+    sans-serif;
+}
+
+.dev-panel.open {
+  display: flex;
+}
+
+.dev-section-title {
+  margin-bottom: 4px;
+  font-weight: 800;
+  color: #c9a7ff;
+}
+
+.dev-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.dev-button {
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: rgb(255 255 255 / 14%);
+  color: #fff;
+  font:
+    700 12px / 1 system-ui,
+    sans-serif;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.dev-button.on {
+  background: #9d4edd;
+}
+
+.dev-button:disabled {
+  opacity: 0.6;
+}
+
+.dev-input {
+  width: 64px;
+  min-height: 34px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 8px;
+  background: #11141b;
+  color: #fff;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.dev-status {
+  min-height: 1em;
+  color: #9f9;
+}
+
+/* ---------- Rotate-your-phone screen (portrait on touch devices) ---------- */
+.rotate {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  background: #1b1f2a;
+  color: #fff;
+  pointer-events: auto;
+  text-align: center;
+  padding: 24px;
+}
+
+.rotate.open {
+  display: flex;
+}
+
+.rotate-icon {
+  font-size: 56px;
+}
+
+.rotate-text {
+  font-size: 20px;
+  font-weight: 800;
+}
+
+/* ---------- Keyboard hints on PC (devices with a mouse) ---------- */
+@media (hover: hover) and (pointer: fine) {
+  .hud-button[data-key]::after {
+    content: attr(data-key);
+    margin-left: 8px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgb(0 0 0 / 25%);
+    font-size: 11px;
+    vertical-align: 1px;
+  }
+
+  .hud-potion[data-key]::before {
+    content: attr(data-key);
+    position: absolute;
+    left: -4px;
+    top: -4px;
+    min-width: 18px;
+    padding: 2px 4px;
+    border-radius: 4px;
+    background: rgb(255 255 255 / 85%);
+    color: #1b1f2a;
+    font:
+      800 11px / 1 system-ui,
+      sans-serif;
+  }
+}
+
+/* ---------- Landscape phones: short screens, tighter HUD ---------- */
+@media (orientation: landscape) and (max-height: 500px) {
+  .hud-banner {
+    top: 22%;
+    font-size: 34px;
+  }
+
+  .hud-intermission {
+    bottom: calc(env(safe-area-inset-bottom) + 10px);
+    padding: 8px 14px;
+    gap: 4px;
+  }
+
+  .hud-potions {
+    top: 30%;
+  }
+
+  .shop-panel {
+    width: min(760px, 100%);
+    padding: 12px;
+  }
+
+  .shop-grid {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  }
+
+  .shop-card-desc {
+    min-height: 0;
+  }
+
+  .dev-panel {
+    max-height: calc(100% - 60px);
+  }
+
+  .debug-overlay {
+    top: calc(env(safe-area-inset-top) + 54px);
+  }
 }
